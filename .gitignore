@@ -1,0 +1,7 @@
+.env
+dist/
+
+**/.terraform
+**/.terraform.*
+**/terraform.*
+**/.DS_Store
