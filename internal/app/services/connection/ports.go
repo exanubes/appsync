@@ -3,19 +3,18 @@ package connection
 import (
 	"context"
 	"time"
+
+	"github.com/exanubes/appsync/internal/app"
 )
 
 type CreateConnectionInput struct {
 	Url          string
 	Subprotocols []string
 }
+
 type CreateConnectionOutput struct {
 	Connection Connection
 	Timeout    time.Duration
-}
-
-type CreateConnectionService interface {
-	Connect(context.Context, CreateConnectionInput) (*CreateConnectionOutput, error)
 }
 
 type DialOptions struct {
@@ -29,6 +28,10 @@ type Dialer interface {
 
 type ConnectionAuthorizer interface {
 	Authorize(context.Context, Connection) (time.Duration, error)
+}
+
+type SubprotocolGenerator interface {
+	Generate(context.Context) (string, error)
 }
 
 type Connection interface {
@@ -47,4 +50,8 @@ type Writer interface {
 
 type Closer interface {
 	Close() error
+}
+
+type Serializer interface {
+	Serialize(app.Signature) (string, error)
 }

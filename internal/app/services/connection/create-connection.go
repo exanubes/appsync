@@ -3,11 +3,12 @@ package connection
 import "context"
 
 type ConnectionService struct {
-	dialer     Dialer
-	authorizer ConnectionAuthorizer
+	dialer      Dialer
+	authorizer  ConnectionAuthorizer
+	subprotocol SubprotocolGenerator
 }
 
-func NewConnectionService(dialer Dialer, connection_authorizer ConnectionAuthorizer) *ConnectionService {
+func NewConnectionService(dialer Dialer, connection_authorizer ConnectionAuthorizer, subprotocol_generator SubprotocolGenerator) *ConnectionService {
 	return &ConnectionService{
 		dialer:     dialer,
 		authorizer: connection_authorizer,
@@ -15,9 +16,14 @@ func NewConnectionService(dialer Dialer, connection_authorizer ConnectionAuthori
 }
 
 func (service *ConnectionService) Connect(ctx context.Context, input CreateConnectionInput) (*CreateConnectionOutput, error) {
+	subprotocol, err := service.subprotocol.Generate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	conn, err := service.dialer.Dial(ctx, DialOptions{
 		Url:          input.Url,
-		Subprotocols: input.Subprotocols,
+		Subprotocols: append(input.Subprotocols, subprotocol),
 	})
 
 	if err != nil {

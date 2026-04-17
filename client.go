@@ -8,6 +8,7 @@ import (
 	"github.com/exanubes/appsync/internal/infrastructure/authorizer"
 	"github.com/exanubes/appsync/internal/infrastructure/codec"
 	"github.com/exanubes/appsync/internal/infrastructure/logger"
+	"github.com/exanubes/appsync/internal/infrastructure/serializer"
 	"github.com/exanubes/appsync/internal/infrastructure/transport"
 )
 
@@ -17,9 +18,11 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 	dialer := transport.New()
 	request_authorizer := authorizer.NewIAMAuthorizer()
 	msg_codec := codec.New()
+	base64_serializer := serializer.New()
 
+	generate_subprotocol_service := connection.NewGenerateSubprotocolService(request_authorizer, base64_serializer)
 	authorize_connection_service := connection.NewAuthorizeConnectionService(msg_codec, request_authorizer, slogger)
-	create_connection_service := connection.NewConnectionService(dialer, authorize_connection_service)
+	create_connection_service := connection.NewConnectionService(dialer, authorize_connection_service, generate_subprotocol_service)
 
 	connection_output, err := create_connection_service.Connect(ctx, connection.CreateConnectionInput{
 		Url:          options.Url,
