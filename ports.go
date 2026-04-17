@@ -4,6 +4,11 @@ import (
 	"context"
 )
 
+type ConnectionOptions struct {
+	Url          string
+	Subprotocols []string
+}
+
 type PublishCommandInput struct{}
 type PublishCommandOutput struct{}
 

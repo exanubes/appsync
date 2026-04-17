@@ -10,7 +10,7 @@ import (
 func Example() {
 	ctx := context.Background()
 
-	client := appsync.Connect()
+	client, err := appsync.Connect(ctx)
 	defer client.Close(ctx)
 
 	result, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{})

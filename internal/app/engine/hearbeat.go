@@ -1,4 +1,4 @@
-package heartbeat
+package engine
 
 import (
 	"context"
@@ -11,7 +11,7 @@ type Heartbeat struct {
 	reset        chan struct{}
 }
 
-func New(timeout time.Duration) *Heartbeat {
+func NewHeartbeat(timeout time.Duration) *Heartbeat {
 	return &Heartbeat{
 		timeout:      timeout,
 		grace_period: timeout / 10,

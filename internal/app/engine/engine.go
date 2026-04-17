@@ -2,16 +2,16 @@ package engine
 
 import (
 	"context"
-
-	"github.com/exanubes/appsync/internal/app"
 )
 
 type Engine struct{}
 
-func New(hearbeat app.Heartbeat) *Engine {
+func New() *Engine {
 	return &Engine{}
 }
 
-func (engine *Engine) Start(ctx context.Context) error {
+func (engine *Engine) Start(ctx context.Context, input StartEngineInput) error {
+	heartbeat := NewHeartbeat(input.Timeout)
+	heartbeat.Start(ctx)
 	return nil
 }

@@ -6,9 +6,16 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/exanubes/appsync/internal/app"
+	"github.com/exanubes/appsync/internal/app/services/connection"
 )
 
-func Dial(ctx context.Context, options app.DialOptions) (*Connection, error) {
+type Websocket struct{}
+
+func New() *Websocket {
+	return &Websocket{}
+}
+
+func (*Websocket) Dial(ctx context.Context, options connection.DialOptions) (connection.Connection, error) {
 	if options.Url == "" {
 		return nil, app.ErrEmptyUrl
 	}

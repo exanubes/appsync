@@ -3,8 +3,8 @@ package appsync
 import (
 	"context"
 
-	"github.com/exanubes/appsync/internal/app"
-	"github.com/exanubes/appsync/internal/app/client"
+	"github.com/exanubes/appsync/internal/app/engine"
+	"github.com/exanubes/appsync/internal/app/services/connection"
 	"github.com/exanubes/appsync/internal/infrastructure/authorizer"
 	"github.com/exanubes/appsync/internal/infrastructure/codec"
 	"github.com/exanubes/appsync/internal/infrastructure/logger"
@@ -12,24 +12,34 @@ import (
 )
 
 // Connect establishes a new AppSync WebSocket connection and returns a Client.
-func Connect(ctx context.Context) (*AppsyncClient, error) {
-	websocket_connection, err := transport.Dial(ctx, app.DialOptions{})
+func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, error) {
+	slogger := logger.New()
+	dialer := transport.New()
+	request_authorizer := authorizer.NewIAMAuthorizer()
+	msg_codec := codec.New()
+
+	authorize_connection_service := connection.NewAuthorizeConnectionService(msg_codec, request_authorizer, slogger)
+	create_connection_service := connection.NewConnectionService(dialer, authorize_connection_service)
+
+	connection_output, err := create_connection_service.Connect(ctx, connection.CreateConnectionInput{
+		Url:          options.Url,
+		Subprotocols: options.Subprotocols,
+	})
 
 	if err != nil {
 		return nil, err
 	}
-	c := client.New(websocket_connection, codec.New(), authorizer.NewIAMAuthorizer(), logger.New())
-	_, err := c.Connect(ctx)
 
-	if err != nil {
-		return nil, err
-	}
+	runtime := engine.New()
+	runtime.Start(ctx, engine.StartEngineInput{
+		Timeout:    connection_output.Timeout,
+		Connection: connection_output.Connection,
+	})
 
 	return &AppsyncClient{}, nil
 }
 
 type AppsyncClient struct {
-	engine app.Engine
 }
 
 func (client *AppsyncClient) Publish(ctx context.Context, input PublishCommandInput) (*PublishCommandOutput, error) {
@@ -41,9 +51,5 @@ func (client *AppsyncClient) Subscribe(ctx context.Context, input SubscribeComma
 }
 
 func (client *AppsyncClient) Close(ctx context.Context) error {
-	return nil
-}
-
-func (client *AppsyncClient) Err(ctx context.Context, input PublishCommandInput) error {
 	return nil
 }
