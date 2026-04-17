@@ -3,3 +3,4 @@ package app
 import "errors"
 
 var ErrEmptyUrl = errors.New("Url is empty")
+var ErrHandshakeTimeout = errors.New("Handshake timeout")
