@@ -2,13 +2,14 @@ package connection
 
 import (
 	"context"
+	"net/url"
 	"time"
 
 	"github.com/exanubes/appsync/internal/app"
 )
 
 type CreateConnectionInput struct {
-	Url          string
+	Url          *url.URL
 	Subprotocols []string
 }
 
@@ -18,7 +19,7 @@ type CreateConnectionOutput struct {
 }
 
 type DialOptions struct {
-	Url          string
+	Url          *url.URL
 	Subprotocols []string
 }
 

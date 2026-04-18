@@ -5,8 +5,11 @@ import (
 )
 
 type ConnectionOptions struct {
-	Url          string
+	HttpEndpoint string
+	WsEndpoint   string
 	Subprotocols []string
+	Region       string
+	Endpoint     string
 }
 
 type PublishCommandInput struct{}

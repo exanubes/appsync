@@ -1,17 +1,24 @@
 package connection
 
-import "context"
+import (
+	"context"
+
+	"github.com/exanubes/appsync/internal/app"
+)
 
 type ConnectionService struct {
 	dialer      Dialer
 	authorizer  ConnectionAuthorizer
 	subprotocol SubprotocolGenerator
+	logger      app.Logger
 }
 
-func NewConnectionService(dialer Dialer, connection_authorizer ConnectionAuthorizer, subprotocol_generator SubprotocolGenerator) *ConnectionService {
+func NewConnectionService(dialer Dialer, connection_authorizer ConnectionAuthorizer, subprotocol_generator SubprotocolGenerator, logger app.Logger) *ConnectionService {
 	return &ConnectionService{
-		dialer:     dialer,
-		authorizer: connection_authorizer,
+		dialer:      dialer,
+		authorizer:  connection_authorizer,
+		subprotocol: subprotocol_generator,
+		logger:      logger.SetContext("CreateConnectionService"),
 	}
 }
 
@@ -20,6 +27,8 @@ func (service *ConnectionService) Connect(ctx context.Context, input CreateConne
 	if err != nil {
 		return nil, err
 	}
+
+	service.logger.Debug("", "subprotocol", subprotocol)
 
 	conn, err := service.dialer.Dial(ctx, DialOptions{
 		Url:          input.Url,

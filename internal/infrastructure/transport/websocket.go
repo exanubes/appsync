@@ -2,7 +2,6 @@ package transport
 
 import (
 	"context"
-	"net/url"
 
 	"github.com/coder/websocket"
 	"github.com/exanubes/appsync/internal/app"
@@ -16,17 +15,12 @@ func New() *Websocket {
 }
 
 func (*Websocket) Dial(ctx context.Context, options connection.DialOptions) (connection.Connection, error) {
-	if options.Url == "" {
+	if options.Url == nil {
 		return nil, app.ErrEmptyUrl
 	}
 
-	url, err := url.Parse(options.Url)
-	if err != nil {
-		return nil, err
-	}
-
-	conn, _, err := websocket.Dial(ctx, options.Url, &websocket.DialOptions{
-		Host:         url.Hostname(),
+	conn, _, err := websocket.Dial(ctx, options.Url.String(), &websocket.DialOptions{
+		Host:         options.Url.Hostname(),
 		Subprotocols: options.Subprotocols,
 	})
 

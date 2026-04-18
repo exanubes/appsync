@@ -2,16 +2,22 @@ package engine
 
 import (
 	"context"
+
+	"github.com/exanubes/appsync/internal/app"
 )
 
-type Engine struct{}
+type Engine struct {
+	logger app.Logger
+}
 
-func New() *Engine {
-	return &Engine{}
+func New(logger app.Logger) *Engine {
+	return &Engine{
+		logger: logger.SetContext("Engine"),
+	}
 }
 
 func (engine *Engine) Start(ctx context.Context, input StartEngineInput) error {
-	heartbeat := NewHeartbeat(input.Timeout)
-	heartbeat.Start(ctx)
-	return nil
+	NewHeartbeat(input.Timeout)
+	engine.logger.Debug("Engine.Start")
+	return input.Connection.Close()
 }
