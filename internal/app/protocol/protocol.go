@@ -1,17 +1,17 @@
 package protocol
 
+type KeepAliveMessage struct{}
+
 type ConnectionAckMessage struct {
-	Type      string `json:"type"`
-	TimeoutMs int    `json:"connectionTimeoutMs"`
+	TimeoutMs int
 }
 
 type ErrorMessage struct {
-	Type   string          `json:"type"`
-	ID     string          `json:"id"`
-	Errors []ErrorMetadata `json:"errors"`
+	ID     string
+	Errors []ErrorMetadata
 }
 
 type ErrorMetadata struct {
-	Type    string `json:"errorType"`
-	Message string `json:"message"`
+	Type    string
+	Message string
 }

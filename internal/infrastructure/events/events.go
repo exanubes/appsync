@@ -1,0 +1,41 @@
+package events
+
+import "github.com/exanubes/appsync/internal/app/protocol"
+
+type ConnectionAckEvent struct {
+	Type      string `json:"type"`
+	TimeoutMs int    `json:"connectionTimeoutMs"`
+}
+
+func (event ConnectionAckEvent) ToProtocol() protocol.ConnectionAckMessage {
+	return protocol.ConnectionAckMessage{
+		TimeoutMs: event.TimeoutMs,
+	}
+}
+
+type ErrorMetadata struct {
+	Type    string `json:"errorType"`
+	Message string `json:"message"`
+}
+
+type ErrorEvent struct {
+	Type   string          `json:"type"`
+	ID     string          `json:"id"`
+	Errors []ErrorMetadata `json:"errors"`
+}
+
+func (event ErrorEvent) ToProtocol() protocol.ErrorMessage {
+	errs := make([]protocol.ErrorMetadata, len(event.Errors))
+
+	for index, err := range event.Errors {
+		errs[index] = protocol.ErrorMetadata{
+			Message: err.Message,
+			Type:    err.Type,
+		}
+	}
+
+	return protocol.ErrorMessage{
+		ID:     event.ID,
+		Errors: errs,
+	}
+}
