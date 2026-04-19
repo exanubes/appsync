@@ -32,12 +32,12 @@ func (engine *Engine) Start(ctx context.Context, input StartEngineInput) {
 	engine.ctx, engine.cancel = context.WithCancel(ctx)
 	engine.wg.Add(3)
 	go func() {
-		engine.err_channel <- engine.io.Read(engine.ctx)
+		engine.err_channel <- engine.io.Read(engine.ctx, input.Ingress)
 		engine.wg.Done()
 	}()
 
 	go func() {
-		engine.err_channel <- engine.io.Write(engine.ctx)
+		engine.err_channel <- engine.io.Write(engine.ctx, input.Egress)
 		engine.wg.Done()
 	}()
 

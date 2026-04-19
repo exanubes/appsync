@@ -5,7 +5,9 @@ import (
 	"net/url"
 
 	"github.com/exanubes/appsync/internal/app/engine"
+	"github.com/exanubes/appsync/internal/app/queue"
 	"github.com/exanubes/appsync/internal/app/services/connection"
+	"github.com/exanubes/appsync/internal/app/services/io"
 	"github.com/exanubes/appsync/internal/composition"
 	"github.com/exanubes/appsync/internal/infrastructure/codec"
 	"github.com/exanubes/appsync/internal/infrastructure/logger"
@@ -51,9 +53,14 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 		return nil, err
 	}
 
-	runtime := engine.New(nil, nil, slogger)
+	ingress_queue := queue.NewIngressQueue(100)
+	egress_queue := queue.NewEgressQueue(100)
+	io_loops := io.New(connection_output.Connection, msg_codec)
+	runtime := engine.New(nil, io_loops, slogger)
 	runtime.Start(ctx, engine.StartEngineInput{
 		Timeout: connection_output.Timeout,
+		Ingress: ingress_queue,
+		Egress:  egress_queue,
 	})
 
 	return &AppsyncClient{
