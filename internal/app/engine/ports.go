@@ -27,5 +27,5 @@ type Writer interface {
 }
 
 type Runtime interface {
-	Run(context.Context, time.Duration) error
+	Run(context.Context, *queue.IngressQueue) error
 }

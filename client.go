@@ -6,8 +6,11 @@ import (
 
 	"github.com/exanubes/appsync/internal/app/engine"
 	"github.com/exanubes/appsync/internal/app/queue"
+	"github.com/exanubes/appsync/internal/app/router"
+	"github.com/exanubes/appsync/internal/app/runtime"
 	"github.com/exanubes/appsync/internal/app/services/connection"
 	"github.com/exanubes/appsync/internal/app/services/io"
+	"github.com/exanubes/appsync/internal/app/usecases"
 	"github.com/exanubes/appsync/internal/composition"
 	"github.com/exanubes/appsync/internal/infrastructure/codec"
 	"github.com/exanubes/appsync/internal/infrastructure/logger"
@@ -56,8 +59,13 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 	ingress_queue := queue.NewIngressQueue(100)
 	egress_queue := queue.NewEgressQueue(100)
 	io_loops := io.New(connection_output.Connection, msg_codec)
-	runtime := engine.New(nil, io_loops, slogger)
-	runtime.Start(ctx, engine.StartEngineInput{
+
+	publish_usecase := usecases.NewPublishMessageUsecase()
+
+	msg_router := router.New(publish_usecase)
+	runtime := runtime.New(msg_router)
+	session := engine.New(runtime, io_loops, slogger)
+	session.Start(ctx, engine.StartEngineInput{
 		Timeout: connection_output.Timeout,
 		Ingress: ingress_queue,
 		Egress:  egress_queue,
@@ -65,7 +73,7 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 
 	return &AppsyncClient{
 		transport: connection_output.Connection,
-		runtime:   runtime,
+		runtime:   session,
 	}, nil
 }
 

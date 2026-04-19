@@ -15,3 +15,8 @@ type ErrorMetadata struct {
 	Type    string
 	Message string
 }
+
+type PublishMessage struct {
+	Destination string
+	Payload     any
+}

@@ -37,6 +37,6 @@ type Heartbeat interface {
 	Reset()
 }
 
-type Engine interface {
-	Start(context.Context) error
+type Router interface {
+	Handle(context.Context, Message) error
 }

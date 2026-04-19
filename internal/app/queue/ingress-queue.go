@@ -16,7 +16,14 @@ func NewIngressQueue(max_size uint) *IngressQueue {
 	}
 }
 
-func (registry *IngressQueue) Next() {}
+func (registry *IngressQueue) Next(ctx context.Context) (app.Message, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case msg := <-registry.inbox:
+		return msg, nil
+	}
+}
 
 func (registry *IngressQueue) Enqueue(ctx context.Context, msg app.Message) error {
 	select {

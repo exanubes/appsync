@@ -41,9 +41,8 @@ func (engine *Engine) Start(ctx context.Context, input StartEngineInput) {
 		engine.wg.Done()
 	}()
 
-	// INFO: blocking
 	go func() {
-		engine.err_channel <- engine.runtime.Run(engine.ctx, input.Timeout)
+		engine.err_channel <- engine.runtime.Run(engine.ctx, input.Ingress)
 		engine.wg.Done()
 	}()
 }
