@@ -51,16 +51,20 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 		return nil, err
 	}
 
-	runtime := engine.New(slogger)
+	runtime := engine.New(nil, nil, slogger)
 	runtime.Start(ctx, engine.StartEngineInput{
-		Timeout:    connection_output.Timeout,
-		Connection: connection_output.Connection,
+		Timeout: connection_output.Timeout,
 	})
 
-	return &AppsyncClient{}, nil
+	return &AppsyncClient{
+		transport: connection_output.Connection,
+		runtime:   runtime,
+	}, nil
 }
 
 type AppsyncClient struct {
+	transport connection.Connection
+	runtime   *engine.Engine
 }
 
 func (client *AppsyncClient) Publish(ctx context.Context, input PublishCommandInput) (*PublishCommandOutput, error) {
@@ -72,5 +76,7 @@ func (client *AppsyncClient) Subscribe(ctx context.Context, input SubscribeComma
 }
 
 func (client *AppsyncClient) Close(ctx context.Context) error {
+	client.runtime.Close(ctx)
+	client.transport.Close()
 	return nil
 }

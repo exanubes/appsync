@@ -1,12 +1,27 @@
 package engine
 
 import (
+	"context"
 	"time"
-
-	"github.com/exanubes/appsync/internal/app/services/connection"
 )
 
 type StartEngineInput struct {
-	Timeout    time.Duration
-	Connection connection.Connection
+	Timeout time.Duration
+}
+
+type IO interface {
+	Reader
+	Writer
+}
+
+type Reader interface {
+	Read(context.Context) error
+}
+
+type Writer interface {
+	Write(context.Context) error
+}
+
+type Runtime interface {
+	Run(context.Context, time.Duration) error
 }
