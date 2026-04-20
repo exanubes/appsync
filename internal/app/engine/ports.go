@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/exanubes/appsync/internal/app"
 	"github.com/exanubes/appsync/internal/app/queue"
 )
 
@@ -27,5 +28,5 @@ type Writer interface {
 }
 
 type Runtime interface {
-	Run(context.Context, *queue.IngressQueue) error
+	Run(context.Context, app.Inbox) error
 }

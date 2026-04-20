@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/exanubes/appsync/internal/app"
-	"github.com/exanubes/appsync/internal/app/queue"
 )
 
 type Runtime struct {
@@ -16,7 +15,7 @@ func New(router app.Router) *Runtime {
 		router: router,
 	}
 }
-func (runtime *Runtime) Run(ctx context.Context, inbox *queue.IngressQueue) error {
+func (runtime *Runtime) Run(ctx context.Context, inbox app.Inbox) error {
 	for {
 		msg, err := inbox.Next(ctx)
 		if err != nil {

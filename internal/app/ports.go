@@ -46,6 +46,10 @@ type Router interface {
 	Handle(context.Context, Message) error
 }
 
+type Inbox interface {
+	Next(context.Context) (Message, error)
+}
+
 type FrameBuilder interface {
 	WithPayload(Payload) FrameBuilder
 	WithChannel(string) FrameBuilder

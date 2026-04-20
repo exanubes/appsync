@@ -4,19 +4,16 @@ import (
 	"context"
 
 	"github.com/exanubes/appsync/internal/app"
-	"github.com/exanubes/appsync/internal/app/pending"
-	"github.com/exanubes/appsync/internal/app/queue"
 )
 
 type SendRequestService struct {
-	egress  *queue.EgressQueue
-	pending *pending.Registry
+	egress  Outbox
+	pending Registry
 }
 
 func NewSendRequestService(
-	egress *queue.EgressQueue,
-	pending *pending.Registry,
-
+	egress Outbox,
+	pending Registry,
 ) *SendRequestService {
 	return &SendRequestService{
 		egress:  egress,

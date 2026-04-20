@@ -46,7 +46,6 @@ func (session *AuthorizeConnectionService) Authorize(ctx context.Context, connec
 		session.logger.Debug("Waiting for message...")
 		event, err := connection.Read(ctx)
 		if err != nil {
-			session.logger.Debug("Fail")
 			return 0, err
 		}
 		session.logger.Debug("Success", "data", string(event))
