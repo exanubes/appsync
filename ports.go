@@ -12,8 +12,10 @@ type ConnectionOptions struct {
 	Endpoint     string
 }
 
-type PublishCommandInput struct{}
-type PublishCommandOutput struct{}
+type PublishCommandInput struct {
+	Channel string
+	Payload []byte
+}
 
 type SubscribeCommandInput struct{}
 type SubscribeCommandOutput struct {
@@ -27,7 +29,7 @@ type NextMessageOutput struct {
 // Client is the client-facing API for interacting with an AppSync WebSocket connection.
 type Client interface {
 	// Send a publish message via websocket connection to a particular channel
-	Publish(context.Context, PublishCommandInput) (*PublishCommandOutput, error)
+	Publish(context.Context, PublishCommandInput) error
 	// Subscribe to a channel and receive messages published to it
 	Subscribe(context.Context, SubscribeCommandInput) (*SubscribeCommandOutput, error)
 	// Close the websocket connection and all open subscriptions created on it

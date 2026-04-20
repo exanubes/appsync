@@ -18,4 +18,5 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.42.0 // indirect
 	github.com/aws/smithy-go v1.25.0 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 )

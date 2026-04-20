@@ -33,23 +33,31 @@ func (engine *Engine) Start(ctx context.Context, input StartEngineInput) {
 	engine.wg.Add(3)
 	go func() {
 		engine.err_channel <- engine.io.Read(engine.ctx, input.Ingress)
+		engine.logger.Debug("Exitted ingress loop")
 		engine.wg.Done()
+		engine.cancel()
 	}()
 
 	go func() {
 		engine.err_channel <- engine.io.Write(engine.ctx, input.Egress)
+
+		engine.logger.Debug("Exitted egress loop")
 		engine.wg.Done()
+		engine.cancel()
 	}()
 
 	go func() {
 		engine.err_channel <- engine.runtime.Run(engine.ctx, input.Ingress)
+		engine.logger.Debug("Exitted runtime loop")
 		engine.wg.Done()
+		engine.cancel()
 	}()
 }
 
 func (engine *Engine) Close(ctx context.Context) error {
 	engine.cancel()
 	engine.wg.Wait()
+	engine.logger.Debug("Waitgroup done")
 	index := 3
 	var error error
 	for index > 0 {
@@ -67,5 +75,6 @@ func (engine *Engine) Close(ctx context.Context) error {
 		}
 	}
 
+	engine.logger.Debug("I/O Engine shutdown complete")
 	return error
 }

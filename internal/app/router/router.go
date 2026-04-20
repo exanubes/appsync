@@ -2,26 +2,33 @@ package router
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/exanubes/appsync/internal/app"
+	"github.com/exanubes/appsync/internal/app/pending"
 	"github.com/exanubes/appsync/internal/app/protocol"
-	"github.com/exanubes/appsync/internal/app/usecases"
 )
 
 type MessageHandler struct {
-	publisher usecases.PublishMessage
+	pending *pending.Registry
 }
 
-func New(publisher usecases.PublishMessage) *MessageHandler {
+func New(pending *pending.Registry) *MessageHandler {
 	return &MessageHandler{
-		publisher: publisher,
+		pending: pending,
 	}
 }
 
-func (handler *MessageHandler) Handle(ctx context.Context, msg app.Message) error {
+func (router *MessageHandler) Handle(ctx context.Context, msg app.Message) error {
 	switch msg := msg.(type) {
-	case protocol.PublishMessage:
-		return handler.publisher.Publish(ctx, msg)
+	case protocol.ErrorMessage:
+		if msg.ID == "" {
+			return fmt.Errorf("%+v", msg.Errors)
+		}
+
+		return router.pending.Fulfill(ctx, msg.ID, fmt.Errorf("%+v", msg.Errors))
+	case protocol.SuccessMessage:
+		return router.pending.Fulfill(ctx, msg.ID, nil)
 	}
 
 	return nil

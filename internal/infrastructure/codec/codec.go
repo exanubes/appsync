@@ -17,8 +17,8 @@ func New() *Codec {
 	return &Codec{}
 }
 
-func (codec Codec) Encode(message app.Message, signature app.Signature) (app.Payload, error) {
-	return nil, nil
+func (codec Codec) Encode(msg app.Message) (app.Payload, error) {
+	return json.Marshal(msg)
 }
 
 func (codec Codec) Decode(payload app.Payload) (app.Message, error) {
@@ -28,14 +28,18 @@ func (codec Codec) Decode(payload app.Payload) (app.Message, error) {
 	switch msg.Type {
 	case protocol.TypeConnectionAck:
 		event := events.ConnectionAckEvent{}
-		err := json.Unmarshal(payload, &msg)
+		err := json.Unmarshal(payload, &event)
 		return event.ToProtocol(), err
 	case protocol.TypeKeepAlive:
 		return protocol.KeepAliveMessage{}, nil
 
-	case protocol.TypeError:
+	case protocol.TypePublishSuccess:
+		event := events.SuccessEvent{}
+		err := json.Unmarshal(payload, &event)
+		return event.ToProtocol(), err
+	case protocol.TypeError, protocol.TypePublishError:
 		event := events.ErrorEvent{}
-		err := json.Unmarshal(payload, &msg)
+		err := json.Unmarshal(payload, &event)
 		return event.ToProtocol(), err
 	}
 

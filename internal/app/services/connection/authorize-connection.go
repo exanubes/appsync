@@ -17,7 +17,7 @@ type AuthorizeConnectionService struct {
 	logger     app.Logger
 }
 
-func NewAuthorizeConnectionService(codec app.Codec, authorizer app.RequestAuthorizer, logger app.Logger) *AuthorizeConnectionService {
+func NewAuthorizeConnectionService(codec app.Decoder, authorizer app.RequestAuthorizer, logger app.Logger) *AuthorizeConnectionService {
 	return &AuthorizeConnectionService{
 		codec:      codec,
 		authorizer: authorizer,

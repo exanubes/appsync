@@ -15,7 +15,7 @@ type Codec interface {
 }
 
 type Encoder interface {
-	Encode(Message, Signature) (Payload, error)
+	Encode(Frame) (Payload, error)
 }
 
 type Decoder interface {
@@ -28,8 +28,13 @@ type Message any
 type Signature map[string]string
 type Payload []byte
 
+type AuthorizeCommandInput struct {
+	Channel string
+	Payload []byte
+}
+
 type RequestAuthorizer interface {
-	Authorize(context.Context, Payload) (Signature, error)
+	Authorize(context.Context, AuthorizeCommandInput) (Signature, error)
 }
 
 type Heartbeat interface {
@@ -39,4 +44,20 @@ type Heartbeat interface {
 
 type Router interface {
 	Handle(context.Context, Message) error
+}
+
+type FrameBuilder interface {
+	WithPayload(Payload) FrameBuilder
+	WithChannel(string) FrameBuilder
+	WithSignature(Signature) FrameBuilder
+	Build() Frame
+}
+
+type FrameBuilderFactory interface {
+	Create() FrameBuilder
+}
+
+type Frame interface {
+	ID() string
+	Encode() (Payload, error)
 }

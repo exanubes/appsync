@@ -1,5 +1,7 @@
 package protocol
 
+import "github.com/exanubes/appsync/internal/app"
+
 type KeepAliveMessage struct{}
 
 type ConnectionAckMessage struct {
@@ -18,5 +20,13 @@ type ErrorMetadata struct {
 
 type PublishMessage struct {
 	Destination string
-	Payload     any
+	Payload     app.Payload
+}
+
+type PublishResult struct {
+	Err error
+}
+
+type SuccessMessage struct {
+	ID string
 }

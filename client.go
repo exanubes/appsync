@@ -5,14 +5,17 @@ import (
 	"net/url"
 
 	"github.com/exanubes/appsync/internal/app/engine"
+	"github.com/exanubes/appsync/internal/app/pending"
+	"github.com/exanubes/appsync/internal/app/protocol"
 	"github.com/exanubes/appsync/internal/app/queue"
 	"github.com/exanubes/appsync/internal/app/router"
 	"github.com/exanubes/appsync/internal/app/runtime"
 	"github.com/exanubes/appsync/internal/app/services/connection"
 	"github.com/exanubes/appsync/internal/app/services/io"
-	"github.com/exanubes/appsync/internal/app/usecases"
+	"github.com/exanubes/appsync/internal/app/usecases/publish"
 	"github.com/exanubes/appsync/internal/composition"
 	"github.com/exanubes/appsync/internal/infrastructure/codec"
+	"github.com/exanubes/appsync/internal/infrastructure/events"
 	"github.com/exanubes/appsync/internal/infrastructure/logger"
 	"github.com/exanubes/appsync/internal/infrastructure/serializer"
 	"github.com/exanubes/appsync/internal/infrastructure/transport"
@@ -58,11 +61,15 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 
 	ingress_queue := queue.NewIngressQueue(100)
 	egress_queue := queue.NewEgressQueue(100)
+	pending_registry := pending.NewRegistry()
 	io_loops := io.New(connection_output.Connection, msg_codec)
-
-	publish_usecase := usecases.NewPublishMessageUsecase()
-
-	msg_router := router.New(publish_usecase)
+	usecases := composition.NewUseCases(
+		request_authorizer,
+		ingress_queue,
+		egress_queue,
+		pending_registry,
+	)
+	msg_router := router.New(pending_registry)
 	runtime := runtime.New(msg_router)
 	session := engine.New(runtime, io_loops, slogger)
 	session.Start(ctx, engine.StartEngineInput{
@@ -74,16 +81,26 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 	return &AppsyncClient{
 		transport: connection_output.Connection,
 		runtime:   session,
+		usecases:  usecases,
 	}, nil
 }
 
 type AppsyncClient struct {
 	transport connection.Connection
 	runtime   *engine.Engine
+	usecases  *composition.UseCases
 }
 
-func (client *AppsyncClient) Publish(ctx context.Context, input PublishCommandInput) (*PublishCommandOutput, error) {
-	return nil, nil
+func (client *AppsyncClient) Publish(ctx context.Context, input PublishCommandInput) error {
+	frame := &events.FrameBuilder{}
+	frame.WithType(protocol.TypePublish)
+
+	err := client.usecases.Publish.Publish(ctx, publish.PublishCommandInput{
+		Destination: input.Channel,
+		Payload:     input.Payload,
+		Frame:       frame,
+	})
+	return err
 }
 
 func (client *AppsyncClient) Subscribe(ctx context.Context, input SubscribeCommandInput) (*SubscribeCommandOutput, error) {
@@ -92,6 +109,5 @@ func (client *AppsyncClient) Subscribe(ctx context.Context, input SubscribeComma
 
 func (client *AppsyncClient) Close(ctx context.Context) error {
 	client.runtime.Close(ctx)
-	client.transport.Close()
-	return nil
+	return client.transport.Close()
 }

@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
+	"time"
 
 	"github.com/exanubes/appsync"
 )
@@ -19,7 +21,7 @@ func main() {
 	println("AWS_REGION", AWS_REGION)
 	println("CHANNEl", CHANNEL)
 	ctx := context.Background()
-	_, err := appsync.Connect(ctx, appsync.ConnectionOptions{
+	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 		HttpEndpoint: HTTP_ENDPOINT,
 		WsEndpoint:   WS_ENDPOINT,
 		Region:       AWS_REGION,
@@ -29,4 +31,38 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer func() {
+		err := client.Close(ctx)
+		if err != nil {
+			println("Closed with error: ", err.Error())
+
+		} else {
+			println("Closed without error")
+		}
+	}()
+
+	event := Event{
+		Message: "Hello World!",
+	}
+
+	data, err := json.Marshal(event)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	err = client.Publish(ctx, appsync.PublishCommandInput{
+		Payload: data,
+		Channel: CHANNEL + "/test",
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+type Event struct {
+	Message string `json:"msg"`
 }

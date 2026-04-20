@@ -31,3 +31,8 @@ func (CanonicalRequest) Create(endpoint *url.URL, payload []byte) (*http.Request
 
 	return req, nil
 }
+
+type CanonicalPayload struct {
+	Channel string   `json:"channel,omitempty"`
+	Payload []string `json:"events,omitempty"`
+}

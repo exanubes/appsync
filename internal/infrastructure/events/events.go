@@ -1,6 +1,8 @@
 package events
 
-import "github.com/exanubes/appsync/internal/app/protocol"
+import (
+	"github.com/exanubes/appsync/internal/app/protocol"
+)
 
 type ConnectionAckEvent struct {
 	Type      string `json:"type"`
@@ -37,5 +39,16 @@ func (event ErrorEvent) ToProtocol() protocol.ErrorMessage {
 	return protocol.ErrorMessage{
 		ID:     event.ID,
 		Errors: errs,
+	}
+}
+
+type SuccessEvent struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+func (event SuccessEvent) ToProtocol() protocol.SuccessMessage {
+	return protocol.SuccessMessage{
+		ID: event.ID,
 	}
 }

@@ -2,6 +2,7 @@ package authorizer
 
 import (
 	"context"
+	"encoding/json"
 	"net/url"
 
 	"github.com/exanubes/appsync/internal/app"
@@ -22,7 +23,21 @@ func NewIAMAuthorizer(endpoint *url.URL, signer internal.Signer, factory interna
 		endpoint: endpoint,
 	}
 }
-func (authorizer *IAMAuthorizer) Authorize(ctx context.Context, payload app.Payload) (app.Signature, error) {
+func (authorizer *IAMAuthorizer) Authorize(ctx context.Context, input app.AuthorizeCommandInput) (app.Signature, error) {
+	canonical := internal.CanonicalPayload{
+		Channel: input.Channel,
+	}
+
+	if input.Payload != nil {
+		canonical.Payload = []string{string(input.Payload)}
+	}
+
+	payload, err := json.Marshal(canonical)
+
+	if err != nil {
+		return nil, err
+	}
+
 	req, err := authorizer.request.Create(authorizer.endpoint, payload)
 
 	if err != nil {

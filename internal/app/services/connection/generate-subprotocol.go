@@ -16,7 +16,7 @@ func NewGenerateSubprotocolService(authorizer app.RequestAuthorizer, serializer 
 }
 
 func (service *GenerateSubprotocolService) Generate(ctx context.Context) (string, error) {
-	signature, err := service.authorizer.Authorize(ctx, []byte(`{}`))
+	signature, err := service.authorizer.Authorize(ctx, app.AuthorizeCommandInput{})
 	if err != nil {
 		return "", err
 	}
