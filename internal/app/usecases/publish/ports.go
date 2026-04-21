@@ -22,7 +22,3 @@ type ReceivePublishResult interface {
 }
 
 type Reply chan error
-
-type SendMessageService interface {
-	Send(context.Context, app.Frame) error
-}

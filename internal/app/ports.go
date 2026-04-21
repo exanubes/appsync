@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+
+	"github.com/exanubes/appsync/internal/app/subscription"
 )
 
 type Logger interface {
@@ -64,4 +66,8 @@ type FrameBuilderFactory interface {
 type Frame interface {
 	ID() string
 	Encode() (Payload, error)
+}
+
+type SendMessageService interface {
+	Send(context.Context, Frame) error
 }

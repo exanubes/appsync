@@ -8,12 +8,12 @@ import (
 
 type PublishMessageUsecase struct {
 	authorizer app.RequestAuthorizer
-	writer     SendMessageService
+	writer     app.SendMessageService
 }
 
 func NewPublishMessageUsecase(
 	authorizer app.RequestAuthorizer,
-	writer SendMessageService,
+	writer app.SendMessageService,
 ) *PublishMessageUsecase {
 	return &PublishMessageUsecase{
 		authorizer: authorizer,
