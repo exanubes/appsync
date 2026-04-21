@@ -2,8 +2,6 @@ package app
 
 import (
 	"context"
-
-	"github.com/exanubes/appsync/internal/app/subscription"
 )
 
 type Logger interface {

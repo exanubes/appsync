@@ -7,6 +7,9 @@ import (
 	"github.com/exanubes/appsync/internal/app/subscription"
 )
 
+// TODO: config that defines buffer sizes
+var buffer_size uint = 100
+
 type SubscribeChannelUseCase struct {
 	authorizer app.RequestAuthorizer
 	writer     app.SendMessageService
@@ -44,7 +47,7 @@ func (usecase *SubscribeChannelUseCase) Execute(ctx context.Context, input Subsc
 		return nil, err
 	}
 
-	sub := subscription.New(msg.ID(), input.Channel)
+	sub := subscription.New(msg.ID(), input.Channel, buffer_size)
 
 	return &SubscribeCommandOutput{
 		Subscription: sub,
