@@ -61,7 +61,7 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 		egress_queue,
 		pending_registry,
 	)
-	msg_router := router.New(pending_registry)
+	msg_router := router.New(pending_registry, usecases.ReceiveData)
 	runtime := runtime.New(msg_router)
 	session := engine.New(runtime, io_loops, slogger)
 	session.Start(ctx, engine.StartEngineInput{

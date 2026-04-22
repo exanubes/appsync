@@ -64,7 +64,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Output: %+v\n", *&output.Sub)
 	err = client.Publish(ctx, appsync.PublishCommandInput{
 		Payload: data,
 		Channel: CHANNEL + "/test",
@@ -73,6 +72,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	ev := Event{}
+	err = output.Sub.DecodeNext(ctx, &ev)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("EVENT: ", ev)
 }
 
 type Event struct {

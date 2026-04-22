@@ -1,6 +1,7 @@
 package events
 
 import (
+	"github.com/exanubes/appsync/internal/app"
 	"github.com/exanubes/appsync/internal/app/protocol"
 )
 
@@ -50,5 +51,18 @@ type SuccessEvent struct {
 func (event SuccessEvent) ToProtocol() protocol.SuccessMessage {
 	return protocol.SuccessMessage{
 		ID: event.ID,
+	}
+}
+
+type DataEvent struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	Data string `json:"event"`
+}
+
+func (event DataEvent) ToProtocol() protocol.DataMessage {
+	return protocol.DataMessage{
+		SubId:   event.ID,
+		Payload: app.Payload(event.Data),
 	}
 }

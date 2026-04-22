@@ -15,9 +15,16 @@ func (sub *ChannelSubscription) Close(ctx context.Context) error {
 }
 
 func (sub *ChannelSubscription) Next(ctx context.Context) (*NextMessageOutput, error) {
-	return nil, nil
+	data, err := sub.subscription.Next(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	return &NextMessageOutput{
+		Data: data,
+	}, nil
 }
 
 func (sub *ChannelSubscription) DecodeNext(ctx context.Context, value any) error {
-	return nil
+	return sub.subscription.Decode(ctx, value)
 }

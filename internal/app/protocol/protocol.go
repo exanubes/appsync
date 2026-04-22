@@ -30,3 +30,8 @@ type PublishResult struct {
 type SuccessMessage struct {
 	ID string
 }
+
+type DataMessage struct {
+	SubId   string
+	Payload app.Payload
+}

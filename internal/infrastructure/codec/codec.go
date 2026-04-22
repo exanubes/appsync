@@ -26,6 +26,10 @@ func (codec Codec) Decode(payload app.Payload) (app.Message, error) {
 	err := json.Unmarshal(payload, &msg)
 
 	switch msg.Type {
+	case protocol.TypeData:
+		event := events.DataEvent{}
+		err := json.Unmarshal(payload, &event)
+		return event.ToProtocol(), err
 	case protocol.TypeConnectionAck:
 		event := events.ConnectionAckEvent{}
 		err := json.Unmarshal(payload, &event)

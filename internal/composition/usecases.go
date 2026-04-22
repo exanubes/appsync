@@ -7,13 +7,15 @@ import (
 	"github.com/exanubes/appsync/internal/app/services/request"
 	sub_service "github.com/exanubes/appsync/internal/app/services/subscription"
 	"github.com/exanubes/appsync/internal/app/subscription"
+	"github.com/exanubes/appsync/internal/app/usecases/data"
 	"github.com/exanubes/appsync/internal/app/usecases/publish"
 	"github.com/exanubes/appsync/internal/app/usecases/subscribe"
 )
 
 type UseCases struct {
-	Publish   publish.PublishMessage
-	Subscribe subscribe.SubscribeChannel
+	Publish     publish.PublishMessage
+	Subscribe   subscribe.SubscribeChannel
+	ReceiveData data.ReceiveData
 }
 
 func NewUseCases(authorizer app.RequestAuthorizer,
@@ -27,9 +29,10 @@ func NewUseCases(authorizer app.RequestAuthorizer,
 	publish_usecase := publish.NewPublishMessageUsecase(authorizer, send_request_service)
 
 	subscribe_usecase := subscribe.NewSubscribeChannelUsecase(authorizer, send_request_service, create_subscription_service)
-
+	receive_data_usecase := data.NewReceiveDataUsecase(subscriptions_registry)
 	return &UseCases{
-		Publish:   publish_usecase,
-		Subscribe: subscribe_usecase,
+		Publish:     publish_usecase,
+		Subscribe:   subscribe_usecase,
+		ReceiveData: receive_data_usecase,
 	}
 }
