@@ -33,11 +33,11 @@ func (codec Codec) Decode(payload app.Payload) (app.Message, error) {
 	case protocol.TypeKeepAlive:
 		return protocol.KeepAliveMessage{}, nil
 
-	case protocol.TypePublishSuccess:
+	case protocol.TypePublishSuccess, protocol.TypeSubscribeSuccess:
 		event := events.SuccessEvent{}
 		err := json.Unmarshal(payload, &event)
 		return event.ToProtocol(), err
-	case protocol.TypeError, protocol.TypePublishError:
+	case protocol.TypeError, protocol.TypePublishError, protocol.TypeSubscribeError:
 		event := events.ErrorEvent{}
 		err := json.Unmarshal(payload, &event)
 		return event.ToProtocol(), err

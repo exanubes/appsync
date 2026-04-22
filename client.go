@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/exanubes/appsync/internal/app/engine"
-	"github.com/exanubes/appsync/internal/app/protocol"
 	"github.com/exanubes/appsync/internal/app/services/connection"
 	"github.com/exanubes/appsync/internal/app/usecases/publish"
+	"github.com/exanubes/appsync/internal/app/usecases/subscribe"
 	"github.com/exanubes/appsync/internal/composition"
 	"github.com/exanubes/appsync/internal/infrastructure/events"
 )
@@ -24,7 +24,6 @@ type AppsyncClient struct {
 
 func (client *AppsyncClient) Publish(ctx context.Context, input PublishCommandInput) error {
 	frame := &events.FrameBuilder{}
-	frame.WithType(protocol.TypePublish)
 
 	err := client.usecases.Publish.Publish(ctx, publish.PublishCommandInput{
 		Destination: input.Channel,
@@ -35,8 +34,17 @@ func (client *AppsyncClient) Publish(ctx context.Context, input PublishCommandIn
 }
 
 func (client *AppsyncClient) Subscribe(ctx context.Context, input SubscribeCommandInput) (*SubscribeCommandOutput, error) {
-
-	return nil, nil
+	frame := &events.FrameBuilder{}
+	result, err := client.usecases.Subscribe.Execute(ctx, subscribe.SubscribeCommandInput{
+		Channel: input.Channel,
+		Frame:   frame,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &SubscribeCommandOutput{
+		Sub: &ChannelSubscription{subscription: result.Subscription},
+	}, err
 }
 
 func (client *AppsyncClient) Close(ctx context.Context) error {

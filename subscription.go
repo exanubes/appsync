@@ -18,6 +18,6 @@ func (sub *ChannelSubscription) Next(ctx context.Context) (*NextMessageOutput, e
 	return nil, nil
 }
 
-func (sub *ChannelSubscription) Decode(ctx context.Context, value any) error {
+func (sub *ChannelSubscription) DecodeNext(ctx context.Context, value any) error {
 	return nil
 }

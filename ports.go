@@ -17,7 +17,9 @@ type PublishCommandInput struct {
 	Payload []byte
 }
 
-type SubscribeCommandInput struct{}
+type SubscribeCommandInput struct {
+	Channel string
+}
 type SubscribeCommandOutput struct {
 	Sub Subscription
 }
@@ -43,7 +45,7 @@ type Subscription interface {
 	// Next returns the next message from the channel.
 	// Blocks until a message is received or the context is cancelled.
 	Next(context.Context) (*NextMessageOutput, error)
-	// Decode returns the next message from the channel and unmarshals it into value.
+	// DecodeNext returns the next message from the channel and unmarshals it into value.
 	// Blocks until a message is received or the context is cancelled.
-	Decode(context.Context, any) error
+	DecodeNext(context.Context, any) error
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -52,7 +53,18 @@ func main() {
 		log.Fatal(err)
 	}
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+
 	defer cancel()
+
+	output, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
+		Channel: CHANNEL + "/test",
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Output: %+v\n", *&output.Sub)
 	err = client.Publish(ctx, appsync.PublishCommandInput{
 		Payload: data,
 		Channel: CHANNEL + "/test",

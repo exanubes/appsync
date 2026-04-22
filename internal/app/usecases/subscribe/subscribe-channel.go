@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/exanubes/appsync/internal/app"
+	"github.com/exanubes/appsync/internal/app/protocol"
 	"github.com/exanubes/appsync/internal/app/subscription"
 )
 
@@ -26,8 +27,6 @@ func NewSubscribeChannelUsecase(
 }
 
 func (usecase *SubscribeChannelUseCase) Execute(ctx context.Context, input SubscribeCommandInput) (*SubscribeCommandOutput, error) {
-	frame := input.Frame
-	frame.WithChannel(input.Channel)
 
 	signature, err := usecase.authorizer.Authorize(ctx, app.AuthorizeCommandInput{
 		Channel: input.Channel,
@@ -37,9 +36,11 @@ func (usecase *SubscribeChannelUseCase) Execute(ctx context.Context, input Subsc
 		return nil, err
 	}
 
-	frame.WithSignature(signature)
+	input.Frame.WithType(protocol.TypeSubscribe).
+		WithChannel(input.Channel).
+		WithSignature(signature)
 
-	msg := frame.Build()
+	msg := input.Frame.Build()
 
 	err = usecase.writer.Send(ctx, msg)
 

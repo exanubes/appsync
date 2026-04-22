@@ -54,6 +54,7 @@ type FrameBuilder interface {
 	WithPayload(Payload) FrameBuilder
 	WithChannel(string) FrameBuilder
 	WithSignature(Signature) FrameBuilder
+	WithType(string) FrameBuilder
 	Build() Frame
 }
 
