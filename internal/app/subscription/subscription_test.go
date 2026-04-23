@@ -181,6 +181,56 @@ func TestSubscription_Next_ConcurrentDelivery(t *testing.T) {
 	}
 }
 
+func TestSubscription_Close(t *testing.T) {
+	t.Run("is idempotent — multiple calls do not panic", func(t *testing.T) {
+		sub := New("id", "ch", 1)
+		sub.Close()
+		sub.Close()
+	})
+
+	t.Run("Next() returns ErrSubscriptionClosed after close", func(t *testing.T) {
+		sub := New("id", "ch", 1)
+		sub.Close()
+
+		_, err := sub.Next(context.Background())
+		if !errors.Is(err, app.ErrSubscriptionClosed) {
+			t.Errorf("Next() error = %v, want %v", err, app.ErrSubscriptionClosed)
+		}
+	})
+
+	t.Run("Deliver() returns ErrSubscriptionClosed after close", func(t *testing.T) {
+		sub := New("id", "ch", 0)
+		sub.Close()
+
+		err := sub.Deliver(context.Background(), app.Payload("test"))
+		if !errors.Is(err, app.ErrSubscriptionClosed) {
+			t.Errorf("Deliver() error = %v, want %v", err, app.ErrSubscriptionClosed)
+		}
+	})
+
+	t.Run("unblocks pending Next() with ErrSubscriptionClosed", func(t *testing.T) {
+		sub := New("id", "ch", 0)
+		result := make(chan error, 1)
+
+		go func() {
+			_, err := sub.Next(context.Background())
+			result <- err
+		}()
+
+		time.Sleep(10 * time.Millisecond)
+		sub.Close()
+
+		select {
+		case err := <-result:
+			if !errors.Is(err, app.ErrSubscriptionClosed) {
+				t.Errorf("Next() error = %v, want %v", err, app.ErrSubscriptionClosed)
+			}
+		case <-time.After(100 * time.Millisecond):
+			t.Error("Next() did not unblock after Close()")
+		}
+	})
+}
+
 func TestSubscription_Decode(t *testing.T) {
 	type json_target struct {
 		Key string `json:"key"`

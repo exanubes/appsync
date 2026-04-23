@@ -3,6 +3,7 @@ package subscription
 import (
 	"context"
 	"encoding/json"
+	"sync"
 
 	"github.com/exanubes/appsync/internal/app"
 )
@@ -11,13 +12,17 @@ type Subscription struct {
 	id      string
 	channel string
 	inbox   *inbox
+	done    chan struct{}
+	once    sync.Once
 }
 
 func New(sub_id string, channel string, buffer_size uint) *Subscription {
+	done := make(chan struct{}, 1)
 	return &Subscription{
 		id:      sub_id,
 		channel: channel,
-		inbox:   new_inbox(buffer_size),
+		done:    done,
+		inbox:   new_inbox(done, buffer_size),
 	}
 }
 
@@ -37,4 +42,10 @@ func (subscription *Subscription) Decode(ctx context.Context, value any) error {
 	}
 
 	return json.Unmarshal(payload, value)
+}
+
+func (subscription *Subscription) Close() {
+	subscription.once.Do(func() {
+		close(subscription.done)
+	})
 }

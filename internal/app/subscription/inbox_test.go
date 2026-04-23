@@ -13,7 +13,7 @@ import (
 const test_enqueue_timeout = 5 * time.Millisecond
 
 func make_full_inbox(payload app.Payload) *inbox {
-	i := new_inbox(1)
+	i := new_inbox(make(chan struct{}), 1)
 	i.timeout = test_enqueue_timeout
 	i.Enqueue(context.Background(), payload)
 	return i
@@ -30,7 +30,7 @@ func TestInbox_Enqueue(t *testing.T) {
 	}{
 		{
 			name:       "enqueues payload successfully",
-			inbox:      func() *inbox { return new_inbox(1) },
+			inbox:      func() *inbox { return new_inbox(make(chan struct{}), 1) },
 			ctx:        func(_ *testing.T) context.Context { return context.Background() },
 			expect_err: nil,
 		},
@@ -42,7 +42,7 @@ func TestInbox_Enqueue(t *testing.T) {
 		},
 		{
 			name:  "returns context.Canceled when context is already cancelled",
-			inbox: func() *inbox { return new_inbox(1) },
+			inbox: func() *inbox { return new_inbox(make(chan struct{}), 1) },
 			ctx: func(_ *testing.T) context.Context {
 				ctx, cancel := context.WithCancel(context.Background())
 				cancel()
@@ -118,7 +118,7 @@ func TestInbox_Next(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			i := new_inbox(1)
+			i := new_inbox(make(chan struct{}), 1)
 			tt.setup(i)
 
 			got, err := i.Next(tt.ctx(t))
@@ -137,7 +137,7 @@ func TestInbox_Next_FIFOOrder(t *testing.T) {
 	first := app.Payload("first")
 	second := app.Payload("second")
 
-	i := new_inbox(2)
+	i := new_inbox(make(chan struct{}), 2)
 	i.Enqueue(context.Background(), first)
 	i.Enqueue(context.Background(), second)
 
