@@ -45,6 +45,8 @@ type mockFrameBuilder struct {
 func (m *mockFrameBuilder) WithPayload(p app.Payload) app.FrameBuilder     { m.payload = p; return m }
 func (m *mockFrameBuilder) WithChannel(c string) app.FrameBuilder          { m.channel = c; return m }
 func (m *mockFrameBuilder) WithSignature(s app.Signature) app.FrameBuilder { m.signature = s; return m }
+func (m *mockFrameBuilder) WithType(_ string) app.FrameBuilder             { return m }
+func (m *mockFrameBuilder) WithID(_ string) app.FrameBuilder               { return m }
 func (m *mockFrameBuilder) Build() app.Frame                               { return m.built_frame }
 
 func TestPublish(t *testing.T) {
