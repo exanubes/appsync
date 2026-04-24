@@ -4,14 +4,21 @@ import (
 	"context"
 
 	"github.com/exanubes/appsync/internal/app/subscription"
+	"github.com/exanubes/appsync/internal/app/usecases/unsubscribe"
+	"github.com/exanubes/appsync/internal/infrastructure/events"
 )
 
 type ChannelSubscription struct {
+	id           string
 	subscription *subscription.Subscription
+	unsubscribe  unsubscribe.UnsubscribeChannel
 }
 
 func (sub *ChannelSubscription) Close(ctx context.Context) error {
-	return nil
+	return sub.unsubscribe.Execute(ctx, unsubscribe.UnsubscribeChannelCommandInput{
+		SubscriptionId: sub.id,
+		Frame:          &events.FrameBuilder{},
+	})
 }
 
 func (sub *ChannelSubscription) Next(ctx context.Context) (*NextMessageOutput, error) {

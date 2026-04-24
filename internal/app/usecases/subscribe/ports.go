@@ -13,6 +13,7 @@ type SubscribeCommandInput struct {
 	Frame   app.FrameBuilder
 }
 type SubscribeCommandOutput struct {
+	SubID        string
 	Subscription *subscription.Subscription
 }
 

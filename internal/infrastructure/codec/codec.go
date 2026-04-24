@@ -11,6 +11,7 @@ import (
 type Envelope struct {
 	Type string `json:"type"`
 }
+
 type Codec struct{}
 
 func New() *Codec {
@@ -30,18 +31,21 @@ func (codec Codec) Decode(payload app.Payload) (app.Message, error) {
 		event := events.DataEvent{}
 		err := json.Unmarshal(payload, &event)
 		return event.ToProtocol(), err
+
 	case protocol.TypeConnectionAck:
 		event := events.ConnectionAckEvent{}
 		err := json.Unmarshal(payload, &event)
 		return event.ToProtocol(), err
+
 	case protocol.TypeKeepAlive:
 		return protocol.KeepAliveMessage{}, nil
 
-	case protocol.TypePublishSuccess, protocol.TypeSubscribeSuccess:
+	case protocol.TypePublishSuccess, protocol.TypeSubscribeSuccess, protocol.TypeUnsubscribeSuccess:
 		event := events.SuccessEvent{}
 		err := json.Unmarshal(payload, &event)
 		return event.ToProtocol(), err
-	case protocol.TypeError, protocol.TypePublishError, protocol.TypeSubscribeError:
+
+	case protocol.TypeError, protocol.TypePublishError, protocol.TypeSubscribeError, protocol.TypeUnsubscribeError:
 		event := events.ErrorEvent{}
 		err := json.Unmarshal(payload, &event)
 		return event.ToProtocol(), err

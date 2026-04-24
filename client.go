@@ -13,7 +13,6 @@ import (
 
 const (
 	ProtocolEvents = "aws-appsync-event-ws"
-	// ProtocolGraphql = "graphql-ws"
 )
 
 type AppsyncClient struct {
@@ -43,7 +42,11 @@ func (client *AppsyncClient) Subscribe(ctx context.Context, input SubscribeComma
 		return nil, err
 	}
 	return &SubscribeCommandOutput{
-		Sub: &ChannelSubscription{subscription: result.Subscription},
+		Sub: &ChannelSubscription{
+			id:           result.SubID,
+			subscription: result.Subscription,
+			unsubscribe:  client.usecases.Unsubscribe,
+		},
 	}, err
 }
 

@@ -80,6 +80,24 @@ func main() {
 	}
 
 	fmt.Println("EVENT: ", ev)
+
+	err = output.Sub.Close(ctx)
+
+	if err != nil {
+		println("Unsub err: ", err.Error())
+	}
+
+	err = output.Sub.Close(ctx)
+
+	if err != nil {
+		println("Second unsub err: ", err.Error())
+	}
+
+	_, err = output.Sub.Next(ctx)
+
+	if err != nil {
+		println("Next after close err: ", err.Error())
+	}
 }
 
 type Event struct {

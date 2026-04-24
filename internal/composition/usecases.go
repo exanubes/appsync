@@ -10,12 +10,14 @@ import (
 	"github.com/exanubes/appsync/internal/app/usecases/data"
 	"github.com/exanubes/appsync/internal/app/usecases/publish"
 	"github.com/exanubes/appsync/internal/app/usecases/subscribe"
+	"github.com/exanubes/appsync/internal/app/usecases/unsubscribe"
 )
 
 type UseCases struct {
 	Publish     publish.PublishMessage
 	Subscribe   subscribe.SubscribeChannel
 	ReceiveData data.ReceiveData
+	Unsubscribe unsubscribe.UnsubscribeChannel
 }
 
 func NewUseCases(authorizer app.RequestAuthorizer,
@@ -29,10 +31,12 @@ func NewUseCases(authorizer app.RequestAuthorizer,
 	publish_usecase := publish.NewPublishMessageUsecase(authorizer, send_request_service)
 
 	subscribe_usecase := subscribe.NewSubscribeChannelUsecase(authorizer, send_request_service, create_subscription_service)
+	unsubscribe_usecase := unsubscribe.NewUnsubscribeChannelUsecase(subscriptions_registry, authorizer, send_request_service)
 	receive_data_usecase := data.NewReceiveDataUsecase(subscriptions_registry)
 	return &UseCases{
 		Publish:     publish_usecase,
 		Subscribe:   subscribe_usecase,
 		ReceiveData: receive_data_usecase,
+		Unsubscribe: unsubscribe_usecase,
 	}
 }

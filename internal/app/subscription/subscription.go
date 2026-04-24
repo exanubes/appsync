@@ -14,6 +14,7 @@ type Subscription struct {
 	inbox   *inbox
 	done    chan struct{}
 	once    sync.Once
+	active  bool
 }
 
 func New(sub_id string, channel string, buffer_size uint) *Subscription {
@@ -23,6 +24,7 @@ func New(sub_id string, channel string, buffer_size uint) *Subscription {
 		channel: channel,
 		done:    done,
 		inbox:   new_inbox(done, buffer_size),
+		active:  true,
 	}
 }
 
@@ -47,5 +49,10 @@ func (subscription *Subscription) Decode(ctx context.Context, value any) error {
 func (subscription *Subscription) Close() {
 	subscription.once.Do(func() {
 		close(subscription.done)
+		subscription.active = false
 	})
+}
+
+func (subscription *Subscription) Active() bool {
+	return subscription.active
 }

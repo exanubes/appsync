@@ -14,6 +14,7 @@ func (FrameBuilderFactory) Create() app.FrameBuilder {
 }
 
 type FrameBuilder struct {
+	id        string
 	_type     string
 	payload   app.Payload
 	channel   string
@@ -40,9 +41,21 @@ func (builder *FrameBuilder) WithType(typ string) app.FrameBuilder {
 	return builder
 }
 
+func (builder *FrameBuilder) WithID(id string) app.FrameBuilder {
+	builder.id = id
+	return builder
+}
+
 func (builder *FrameBuilder) Build() app.Frame {
+	var id string
+
+	if builder.id != "" {
+		id = builder.id
+	} else {
+		id = uuid.NewString()
+	}
 	return Frame{
-		Id:        uuid.NewString(),
+		Id:        id,
 		Topic:     builder.channel,
 		Signature: builder.signature,
 		Payload:   []string{string(builder.payload)},

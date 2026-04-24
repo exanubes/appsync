@@ -54,6 +54,7 @@ func (usecase *SubscribeChannelUseCase) Execute(ctx context.Context, input Subsc
 	})
 
 	return &SubscribeCommandOutput{
+		SubID:        msg.ID(),
 		Subscription: sub,
 	}, nil
 }
