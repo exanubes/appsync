@@ -30,6 +30,7 @@ func (router *MessageHandler) Handle(ctx context.Context, msg app.Message) error
 		}
 
 		return router.pending.Fulfill(ctx, msg.ID, fmt.Errorf("%+v", msg.Errors))
+
 	case protocol.SuccessMessage:
 		return router.pending.Fulfill(ctx, msg.ID, nil)
 

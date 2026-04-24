@@ -7,12 +7,14 @@ import (
 )
 
 type Runtime struct {
-	router app.Router
+	router    app.Router
+	heartbeat app.Heartbeat
 }
 
-func New(router app.Router) *Runtime {
+func New(router app.Router, heartbeat app.Heartbeat) *Runtime {
 	return &Runtime{
-		router: router,
+		router:    router,
+		heartbeat: heartbeat,
 	}
 }
 func (runtime *Runtime) Run(ctx context.Context, inbox app.Inbox) error {
@@ -22,6 +24,7 @@ func (runtime *Runtime) Run(ctx context.Context, inbox app.Inbox) error {
 			return err
 		}
 
+		runtime.heartbeat.Reset()
 		err = runtime.router.Handle(ctx, msg)
 
 		if err != nil {

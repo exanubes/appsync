@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"time"
 )
 
 type Logger interface {
@@ -38,7 +39,7 @@ type RequestAuthorizer interface {
 }
 
 type Heartbeat interface {
-	Start(context.Context) <-chan error
+	Start(context.Context, time.Duration) error
 	Reset()
 }
 
@@ -70,4 +71,14 @@ type Frame interface {
 
 type SendMessageService interface {
 	Send(context.Context, Frame) error
+}
+
+type Clock interface {
+	NewTimer(time.Duration) Timer
+}
+
+type Timer interface {
+	C() <-chan time.Time
+	Stop() bool
+	Reset(time.Duration)
 }

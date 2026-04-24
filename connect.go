@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/exanubes/appsync/internal/app/engine"
+	"github.com/exanubes/appsync/internal/app/heartbeat"
 	"github.com/exanubes/appsync/internal/app/pending"
 	"github.com/exanubes/appsync/internal/app/queue"
 	"github.com/exanubes/appsync/internal/app/router"
@@ -12,6 +13,7 @@ import (
 	"github.com/exanubes/appsync/internal/app/services/connection"
 	"github.com/exanubes/appsync/internal/app/services/io"
 	"github.com/exanubes/appsync/internal/composition"
+	"github.com/exanubes/appsync/internal/infrastructure/clock"
 	"github.com/exanubes/appsync/internal/infrastructure/codec"
 	"github.com/exanubes/appsync/internal/infrastructure/logger"
 	"github.com/exanubes/appsync/internal/infrastructure/serializer"
@@ -51,6 +53,8 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 		return nil, err
 	}
 
+	clock := clock.New()
+	heartbeat := heartbeat.New(clock)
 	ingress_queue := queue.NewIngressQueue(100)
 	egress_queue := queue.NewEgressQueue(100)
 	pending_registry := pending.NewRegistry()
@@ -62,8 +66,8 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 		pending_registry,
 	)
 	msg_router := router.New(pending_registry, usecases.ReceiveData)
-	runtime := runtime.New(msg_router)
-	session := engine.New(runtime, io_loops, slogger)
+	runtime := runtime.New(msg_router, heartbeat)
+	session := engine.New(heartbeat, runtime, io_loops, slogger)
 	session.Start(ctx, engine.StartEngineInput{
 		Timeout: connection_output.Timeout,
 		Ingress: ingress_queue,
