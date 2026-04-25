@@ -75,6 +75,7 @@ type SendMessageService interface {
 
 type Clock interface {
 	NewTimer(time.Duration) Timer
+	Now() time.Time
 }
 
 type Timer interface {

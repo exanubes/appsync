@@ -6,13 +6,14 @@ import (
 
 	"github.com/exanubes/appsync/internal/app"
 	"github.com/exanubes/appsync/internal/infrastructure/authorizer"
+	"github.com/exanubes/appsync/internal/infrastructure/clock"
 )
 
-type authorizer_impl struct {
+type authorizer_adapter struct {
 	impl app.RequestAuthorizer
 }
 
-func (authorizer *authorizer_impl) Authorize(ctx context.Context, input AuthorizeCommandInput) (Signature, error) {
+func (authorizer *authorizer_adapter) Authorize(ctx context.Context, input AuthorizeCommandInput) (Signature, error) {
 	result, err := authorizer.impl.Authorize(ctx, app.AuthorizeCommandInput{
 		Channel: input.Channel,
 		Payload: input.Payload,
@@ -27,9 +28,10 @@ func (authorizer *authorizer_impl) Authorize(ctx context.Context, input Authoriz
 
 func NewIAMAuthorizer(region string, endpoint *url.URL) Authorizer {
 	credentials_provider := authorizer.NewAwsCredentialsProvider()
-	signer := authorizer.NewSigv4Signer(region, credentials_provider)
+	clock := clock.New()
+	signer := authorizer.NewSigv4Signer(region, credentials_provider, clock)
 
-	return &authorizer_impl{
+	return &authorizer_adapter{
 		impl: authorizer.NewIAMAuthorizer(
 			endpoint,
 			signer,

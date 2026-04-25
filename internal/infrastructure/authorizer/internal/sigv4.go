@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"io"
 	"net/http"
-	"time"
 
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/exanubes/appsync/internal/app"
@@ -15,6 +14,7 @@ import (
 type Sigv4Signer struct {
 	Provider CredentialProvider
 	Region   string
+	Clock    app.Clock
 }
 
 func (signer *Sigv4Signer) Sign(ctx context.Context, req *http.Request) (app.Signature, error) {
@@ -40,7 +40,7 @@ func (signer *Sigv4Signer) Sign(ctx context.Context, req *http.Request) (app.Sig
 		payload_hash,
 		"appsync",
 		signer.Region,
-		time.Now(),
+		signer.Clock.Now(),
 	)
 
 	if err != nil {

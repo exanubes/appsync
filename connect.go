@@ -56,7 +56,7 @@ func (builder *builder) WithAuthorizer(authorizer Authorizer) *builder {
 		builder.errors = append(builder.errors, errors.New("Authorizer can't be nil"))
 		return builder
 	}
-	request_authorizer, ok := authorizer.(*authorizer_impl)
+	request_authorizer, ok := authorizer.(*authorizer_adapter)
 
 	if !ok {
 		builder.errors = append(builder.errors, errors.New("Invalid authorizer"))
