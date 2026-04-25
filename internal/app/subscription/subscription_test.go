@@ -11,7 +11,7 @@ import (
 )
 
 func make_full_subscription(payload app.Payload) *Subscription {
-	sub := New("id", "ch", 1)
+	sub, _ := New("id", "ch", 1)
 	sub.inbox.timeout = test_enqueue_timeout
 	sub.Deliver(context.Background(), payload)
 	return sub
@@ -21,7 +21,7 @@ func TestSubscription_New(t *testing.T) {
 	payload := app.Payload("test-payload")
 
 	t.Run("can deliver and receive a payload", func(t *testing.T) {
-		sub := New("test-id", "test-channel", 1)
+		sub, _ := New("test-id", "test-channel", 1)
 
 		if err := sub.Deliver(context.Background(), payload); err != nil {
 			t.Fatalf("Deliver() error = %v", err)
@@ -37,7 +37,7 @@ func TestSubscription_New(t *testing.T) {
 	})
 
 	t.Run("zero buffer forces synchronous rendezvous", func(t *testing.T) {
-		sub := New("test-id", "test-channel", 0)
+		sub, _ := New("test-id", "test-channel", 0)
 		received := make(chan app.Payload, 1)
 
 		go func() {
@@ -73,7 +73,7 @@ func TestSubscription_Deliver(t *testing.T) {
 	}{
 		{
 			name:       "delivers payload successfully",
-			sub:        func() *Subscription { return New("id", "ch", 1) },
+			sub:        func() *Subscription { sub, _ := New("id", "ch", 1); return sub },
 			ctx:        func(_ *testing.T) context.Context { return context.Background() },
 			expect_err: nil,
 		},
@@ -140,7 +140,7 @@ func TestSubscription_Next(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sub := New("id", "ch", 1)
+			sub, _ := New("id", "ch", 1)
 			tt.setup(sub)
 
 			got, err := sub.Next(tt.ctx(t))
@@ -157,7 +157,7 @@ func TestSubscription_Next(t *testing.T) {
 
 func TestSubscription_Next_ConcurrentDelivery(t *testing.T) {
 	payload := app.Payload("test-payload")
-	sub := New("id", "ch", 0)
+	sub, _ := New("id", "ch", 0)
 	received := make(chan app.Payload, 1)
 
 	go func() {
@@ -183,13 +183,13 @@ func TestSubscription_Next_ConcurrentDelivery(t *testing.T) {
 
 func TestSubscription_Close(t *testing.T) {
 	t.Run("is idempotent — multiple calls do not panic", func(t *testing.T) {
-		sub := New("id", "ch", 1)
+		sub, _ := New("id", "ch", 1)
 		sub.Close()
 		sub.Close()
 	})
 
 	t.Run("Next() returns ErrSubscriptionClosed after close", func(t *testing.T) {
-		sub := New("id", "ch", 1)
+		sub, _ := New("id", "ch", 1)
 		sub.Close()
 
 		_, err := sub.Next(context.Background())
@@ -199,7 +199,7 @@ func TestSubscription_Close(t *testing.T) {
 	})
 
 	t.Run("Deliver() returns ErrSubscriptionClosed after close", func(t *testing.T) {
-		sub := New("id", "ch", 0)
+		sub, _ := New("id", "ch", 0)
 		sub.Close()
 
 		err := sub.Deliver(context.Background(), app.Payload("test"))
@@ -209,7 +209,7 @@ func TestSubscription_Close(t *testing.T) {
 	})
 
 	t.Run("unblocks pending Next() with ErrSubscriptionClosed", func(t *testing.T) {
-		sub := New("id", "ch", 0)
+		sub, _ := New("id", "ch", 0)
 		result := make(chan error, 1)
 
 		go func() {
@@ -229,6 +229,44 @@ func TestSubscription_Close(t *testing.T) {
 			t.Error("Next() did not unblock after Close()")
 		}
 	})
+}
+
+func TestSubscription_Active(t *testing.T) {
+	tests := []struct {
+		name   string
+		setup  func(*Subscription)
+		expect bool
+	}{
+		{
+			name:   "returns true for a new subscription",
+			setup:  func(_ *Subscription) {},
+			expect: true,
+		},
+		{
+			name:   "returns false after Close()",
+			setup:  func(sub *Subscription) { sub.Close() },
+			expect: false,
+		},
+		{
+			name: "remains false after redundant Close()",
+			setup: func(sub *Subscription) {
+				sub.Close()
+				sub.Close()
+			},
+			expect: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sub, _ := New("id", "ch", 1)
+			tt.setup(sub)
+
+			if got := sub.Active(); got != tt.expect {
+				t.Errorf("Active() = %v, want %v", got, tt.expect)
+			}
+		})
+	}
 }
 
 func TestSubscription_Decode(t *testing.T) {
@@ -314,7 +352,7 @@ func TestSubscription_Decode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sub := New("id", "ch", 1)
+			sub, _ := New("id", "ch", 1)
 			tt.setup(sub)
 
 			target := tt.target()

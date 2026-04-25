@@ -58,7 +58,7 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 	ingress_queue := queue.NewIngressQueue(100)
 	egress_queue := queue.NewEgressQueue(100)
 	pending_registry := pending.NewRegistry()
-	io_loops := io.New(connection_output.Connection, msg_codec)
+	io_loops := io.New(ingress_queue, egress_queue, connection_output.Connection, msg_codec)
 	usecases := composition.NewUseCases(
 		request_authorizer,
 		ingress_queue,
@@ -66,12 +66,10 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 		pending_registry,
 	)
 	msg_router := router.New(pending_registry, usecases.ReceiveData)
-	runtime := runtime.New(msg_router, heartbeat)
+	runtime := runtime.New(ingress_queue, msg_router, heartbeat)
 	session := engine.New(heartbeat, runtime, io_loops, slogger)
 	session.Start(ctx, engine.StartEngineInput{
 		Timeout: connection_output.Timeout,
-		Ingress: ingress_queue,
-		Egress:  egress_queue,
 	})
 
 	return &AppsyncClient{

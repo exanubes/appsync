@@ -5,13 +5,10 @@ import (
 	"time"
 
 	"github.com/exanubes/appsync/internal/app"
-	"github.com/exanubes/appsync/internal/app/queue"
 )
 
 type StartEngineInput struct {
 	Timeout time.Duration
-	Ingress *queue.IngressQueue
-	Egress  *queue.EgressQueue
 }
 
 type IO interface {
@@ -20,13 +17,17 @@ type IO interface {
 }
 
 type Reader interface {
-	Read(context.Context, *queue.IngressQueue) error
+	Read(context.Context) error
 }
 
 type Writer interface {
-	Write(context.Context, *queue.EgressQueue) error
+	Write(context.Context) error
 }
 
 type Runtime interface {
-	Run(context.Context, app.Inbox) error
+	Run(context.Context) error
+}
+
+type Inbox interface {
+	Next(context.Context) (app.Message, error)
 }

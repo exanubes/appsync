@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/exanubes/appsync/internal/app"
 	"github.com/exanubes/appsync/internal/app/runtime"
@@ -28,6 +29,11 @@ func (s *stub_inbox) Next(ctx context.Context) (app.Message, error) {
 	return msg, nil
 }
 
+type stub_heartbeat struct{}
+
+func (s *stub_heartbeat) Start(_ context.Context, _ time.Duration) error { return nil }
+func (s *stub_heartbeat) Reset()                                         {}
+
 type mock_router struct {
 	err      error
 	received []app.Message
@@ -44,12 +50,12 @@ func TestRun(t *testing.T) {
 	msg_b := "message-b"
 
 	tests := []struct {
-		name             string
-		inbox            *stub_inbox
-		router           *mock_router
-		ctx              func() context.Context
-		expect_err       error
-		expect_received  []app.Message
+		name            string
+		inbox           *stub_inbox
+		router          *mock_router
+		ctx             func() context.Context
+		expect_err      error
+		expect_received []app.Message
 	}{
 		{
 			name: "routes all messages before returning inbox error",
@@ -71,8 +77,8 @@ func TestRun(t *testing.T) {
 			expect_received: []app.Message{msg_a},
 		},
 		{
-			name:  "returns context error when context is cancelled",
-			inbox: &stub_inbox{},
+			name:   "returns context error when context is cancelled",
+			inbox:  &stub_inbox{},
 			router: &mock_router{},
 			ctx: func() context.Context {
 				ctx, cancel := context.WithCancel(context.Background())
@@ -86,8 +92,8 @@ func TestRun(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := runtime.New(tt.router)
-			err := r.Run(tt.ctx(), tt.inbox)
+			r := runtime.New(tt.inbox, tt.router, &stub_heartbeat{})
+			err := r.Run(tt.ctx())
 
 			if !errors.Is(err, tt.expect_err) {
 				t.Errorf("got error %v, want %v", err, tt.expect_err)

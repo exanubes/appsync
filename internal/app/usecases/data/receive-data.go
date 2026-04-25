@@ -21,5 +21,9 @@ func (usecase *ReceiveDataUseCase) Execute(ctx context.Context, msg protocol.Dat
 		return app.ErrSubscriptionNotFound
 	}
 
+	if !subscription.Active() {
+		return app.ErrSubscriptionClosed
+	}
+
 	return subscription.Deliver(ctx, msg.Payload)
 }

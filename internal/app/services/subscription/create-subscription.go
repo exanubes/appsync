@@ -17,8 +17,11 @@ func NewCreateSubscriptionService(registry Registry) *CreateSubscriptionService 
 	}
 }
 
-func (service *CreateSubscriptionService) Create(input CreateSubscriptionInput) *subscription.Subscription {
-	sub := subscription.New(input.ID, input.Channel, buffer_size)
+func (service *CreateSubscriptionService) Create(input CreateSubscriptionInput) (*subscription.Subscription, error) {
+	sub, err := subscription.New(input.ID, input.Channel, buffer_size)
+	if err != nil {
+		return nil, err
+	}
 	service.registry.Register(sub)
-	return sub
+	return sub, err
 }

@@ -9,17 +9,19 @@ import (
 type Runtime struct {
 	router    app.Router
 	heartbeat app.Heartbeat
+	inbox     app.Inbox
 }
 
-func New(router app.Router, heartbeat app.Heartbeat) *Runtime {
+func New(inbox app.Inbox, router app.Router, heartbeat app.Heartbeat) *Runtime {
 	return &Runtime{
 		router:    router,
 		heartbeat: heartbeat,
+		inbox:     inbox,
 	}
 }
-func (runtime *Runtime) Run(ctx context.Context, inbox app.Inbox) error {
+func (runtime *Runtime) Run(ctx context.Context) error {
 	for {
-		msg, err := inbox.Next(ctx)
+		msg, err := runtime.inbox.Next(ctx)
 		if err != nil {
 			return err
 		}

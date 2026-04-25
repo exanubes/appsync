@@ -48,10 +48,14 @@ func (usecase *SubscribeChannelUseCase) Execute(ctx context.Context, input Subsc
 		return nil, err
 	}
 
-	sub := usecase.subscription.Create(subscription.CreateSubscriptionInput{
+	sub, err := usecase.subscription.Create(subscription.CreateSubscriptionInput{
 		ID:      msg.ID(),
 		Channel: input.Channel,
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	return &SubscribeCommandOutput{
 		SubID:        msg.ID(),

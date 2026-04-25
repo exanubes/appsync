@@ -3,10 +3,14 @@ package subscription
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"sync"
 
 	"github.com/exanubes/appsync/internal/app"
 )
+
+var ErrInvalidID = errors.New("Expected ID, received empty string")
+var ErrInvalidChannel = errors.New("Expected channel, received empty string")
 
 type Subscription struct {
 	id      string
@@ -17,7 +21,15 @@ type Subscription struct {
 	active  bool
 }
 
-func New(sub_id string, channel string, buffer_size uint) *Subscription {
+func New(sub_id string, channel string, buffer_size uint) (*Subscription, error) {
+	if sub_id == "" {
+		return nil, ErrInvalidID
+	}
+
+	if channel == "" {
+		return nil, ErrInvalidChannel
+	}
+
 	done := make(chan struct{}, 1)
 	return &Subscription{
 		id:      sub_id,
@@ -25,7 +37,8 @@ func New(sub_id string, channel string, buffer_size uint) *Subscription {
 		done:    done,
 		inbox:   new_inbox(done, buffer_size),
 		active:  true,
-	}
+	}, nil
+
 }
 
 func (subscription *Subscription) Deliver(ctx context.Context, payload app.Payload) error {

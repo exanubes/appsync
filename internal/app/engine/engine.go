@@ -36,21 +36,21 @@ func (engine *Engine) Start(ctx context.Context, input StartEngineInput) {
 	engine.ctx, engine.cancel = context.WithCancel(ctx)
 	engine.wg.Add(managed_goroutines_count)
 	go func() {
-		engine.err_channel <- engine.io.Read(engine.ctx, input.Ingress)
+		engine.err_channel <- engine.io.Read(engine.ctx)
 		engine.logger.Debug("Exitted ingress loop")
 		engine.wg.Done()
 		engine.cancel()
 	}()
 
 	go func() {
-		engine.err_channel <- engine.io.Write(engine.ctx, input.Egress)
+		engine.err_channel <- engine.io.Write(engine.ctx)
 		engine.logger.Debug("Exitted egress loop")
 		engine.wg.Done()
 		engine.cancel()
 	}()
 
 	go func() {
-		engine.err_channel <- engine.runtime.Run(engine.ctx, input.Ingress)
+		engine.err_channel <- engine.runtime.Run(engine.ctx)
 		engine.logger.Debug("Exitted runtime loop")
 		engine.wg.Done()
 		engine.cancel()
@@ -58,7 +58,7 @@ func (engine *Engine) Start(ctx context.Context, input StartEngineInput) {
 
 	go func() {
 		engine.err_channel <- engine.heartbeat.Start(engine.ctx, input.Timeout)
-		engine.logger.Debug("Exitted hearbeat loop")
+		engine.logger.Debug("Exitted heartbeat loop")
 		engine.wg.Done()
 		engine.cancel()
 	}()
@@ -67,7 +67,6 @@ func (engine *Engine) Start(ctx context.Context, input StartEngineInput) {
 func (engine *Engine) Close(ctx context.Context) error {
 	engine.cancel()
 	engine.wg.Wait()
-	engine.logger.Debug("Waitgroup done")
 	index := managed_goroutines_count
 	var error error
 	for index > 0 {
@@ -78,7 +77,7 @@ func (engine *Engine) Close(ctx context.Context) error {
 			return ctx.Err()
 
 		case err := <-engine.err_channel:
-			if err != nil && errors.Is(err, context.Canceled) {
+			if err != nil && !errors.Is(err, context.Canceled) {
 				error = fmt.Errorf("%w\n%w", error, err)
 			}
 		default:

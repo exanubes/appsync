@@ -22,5 +22,5 @@ type SubscribeChannel interface {
 }
 
 type CreateSubscription interface {
-	Create(sub_service.CreateSubscriptionInput) *subscription.Subscription
+	Create(sub_service.CreateSubscriptionInput) (*subscription.Subscription, error)
 }

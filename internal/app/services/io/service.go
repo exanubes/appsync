@@ -4,25 +4,28 @@ import (
 	"context"
 
 	"github.com/exanubes/appsync/internal/app"
-	"github.com/exanubes/appsync/internal/app/queue"
 	"github.com/exanubes/appsync/internal/app/services/connection"
 )
 
 type IOService struct {
 	conn    connection.Connection
 	decoder app.Decoder
+	inbox   Inbox
+	outbox  Outbox
 }
 
-func New(reader connection.Connection, codec app.Decoder) *IOService {
+func New(inbox Inbox, outbox Outbox, reader connection.Connection, codec app.Decoder) *IOService {
 	return &IOService{
 		conn:    reader,
 		decoder: codec,
+		inbox:   inbox,
+		outbox:  outbox,
 	}
 }
 
-func (service *IOService) Write(ctx context.Context, queue *queue.EgressQueue) error {
+func (service *IOService) Write(ctx context.Context) error {
 	for {
-		payload, err := queue.Next(ctx)
+		payload, err := service.outbox.Next(ctx)
 		if err != nil {
 			return err
 		}
@@ -32,7 +35,7 @@ func (service *IOService) Write(ctx context.Context, queue *queue.EgressQueue) e
 		}
 	}
 }
-func (service *IOService) Read(ctx context.Context, queue *queue.IngressQueue) error {
+func (service *IOService) Read(ctx context.Context) error {
 	for {
 		data, err := service.conn.Read(ctx)
 
@@ -45,7 +48,7 @@ func (service *IOService) Read(ctx context.Context, queue *queue.IngressQueue) e
 			return err
 		}
 
-		err = queue.Enqueue(ctx, msg)
+		err = service.inbox.Enqueue(ctx, msg)
 
 		if err != nil {
 			return err

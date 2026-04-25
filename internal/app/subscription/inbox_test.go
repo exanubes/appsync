@@ -60,6 +60,16 @@ func TestInbox_Enqueue(t *testing.T) {
 			},
 			expect_err: context.DeadlineExceeded,
 		},
+		{
+			name: "returns ErrSubscriptionClosed when done channel is closed",
+			inbox: func() *inbox {
+				done := make(chan struct{})
+				close(done)
+				return new_inbox(done, 0) // INFO: 0 buffer to avoid flaky tests
+			},
+			ctx:        func(_ *testing.T) context.Context { return context.Background() },
+			expect_err: app.ErrSubscriptionClosed,
+		},
 	}
 
 	for _, tt := range tests {
@@ -155,5 +165,51 @@ func TestInbox_Next_FIFOOrder(t *testing.T) {
 	}
 	if !bytes.Equal(got2, second) {
 		t.Errorf("second Next() = %v, want %v", got2, second)
+	}
+}
+
+func TestInbox_Next_ClosedDone(t *testing.T) {
+	done := make(chan struct{})
+	close(done)
+	i := new_inbox(done, 1)
+
+	_, err := i.Next(context.Background())
+	if !errors.Is(err, app.ErrSubscriptionClosed) {
+		t.Errorf("Next() error = %v, want %v", err, app.ErrSubscriptionClosed)
+	}
+}
+
+func TestInbox_Next_UnblocksOnDone(t *testing.T) {
+	done := make(chan struct{})
+	i := new_inbox(done, 0) // INFO: 0 buffer to avoid flaky tests
+
+	result := make(chan error, 1)
+
+	go func() {
+		_, err := i.Next(context.Background())
+		result <- err
+	}()
+
+	time.Sleep(10 * time.Millisecond)
+	close(done)
+
+	select {
+	case err := <-result:
+		if !errors.Is(err, app.ErrSubscriptionClosed) {
+			t.Errorf("Next() error = %v, want %v", err, app.ErrSubscriptionClosed)
+		}
+	case <-time.After(100 * time.Millisecond):
+		t.Error("Next() did not unblock after done channel was closed")
+	}
+}
+
+func TestInbox_Enqueue_ClosedDone(t *testing.T) {
+	done := make(chan struct{})
+	close(done)
+	i := new_inbox(done, 0) // INFO: 0 buffer to avoid flaky tests
+
+	err := i.Enqueue(context.Background(), app.Payload("test"))
+	if !errors.Is(err, app.ErrSubscriptionClosed) {
+		t.Errorf("Enqueue() error = %v, want %v", err, app.ErrSubscriptionClosed)
 	}
 }

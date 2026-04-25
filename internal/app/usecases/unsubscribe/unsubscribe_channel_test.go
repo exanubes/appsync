@@ -49,19 +49,23 @@ type mock_frame_builder struct {
 	id         string
 }
 
-func (m *mock_frame_builder) WithPayload(_ app.Payload) app.FrameBuilder      { return m }
-func (m *mock_frame_builder) WithChannel(_ string) app.FrameBuilder           { return m }
-func (m *mock_frame_builder) WithSignature(s app.Signature) app.FrameBuilder  { m.signature = s; return m }
-func (m *mock_frame_builder) WithType(t string) app.FrameBuilder              { m.frame_type = t; return m }
-func (m *mock_frame_builder) WithID(id string) app.FrameBuilder               { m.id = id; return m }
-func (m *mock_frame_builder) Build() app.Frame                                { return mock_frame{} }
+func (m *mock_frame_builder) WithPayload(_ app.Payload) app.FrameBuilder { return m }
+func (m *mock_frame_builder) WithChannel(_ string) app.FrameBuilder      { return m }
+func (m *mock_frame_builder) WithSignature(s app.Signature) app.FrameBuilder {
+	m.signature = s
+	return m
+}
+func (m *mock_frame_builder) WithType(t string) app.FrameBuilder { m.frame_type = t; return m }
+func (m *mock_frame_builder) WithID(id string) app.FrameBuilder  { m.id = id; return m }
+func (m *mock_frame_builder) Build() app.Frame                   { return mock_frame{} }
 
 func active_sub() *subscription.Subscription {
-	return subscription.New("sub-id", "test-channel", 0)
+	sub, _ := subscription.New("sub-id", "test-channel", 0)
+	return sub
 }
 
 func inactive_sub() *subscription.Subscription {
-	sub := subscription.New("sub-id", "test-channel", 0)
+	sub, _ := subscription.New("sub-id", "test-channel", 0)
 	sub.Close()
 	return sub
 }
@@ -74,14 +78,14 @@ func TestUnsubscribeChannel(t *testing.T) {
 	signature := app.Signature{"Authorization": "sig-value"}
 
 	tests := []struct {
-		name             string
-		registry         *mock_registry
-		authorizer       *mock_authorizer
-		sender           *mock_sender
-		expect_err       error
-		expect_send      bool
+		name              string
+		registry          *mock_registry
+		authorizer        *mock_authorizer
+		sender            *mock_sender
+		expect_err        error
+		expect_send       bool
 		expect_sub_closed bool
-		expect_removed   string
+		expect_removed    string
 	}{
 		{
 			name:       "subscription not found",
