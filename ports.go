@@ -2,14 +2,15 @@ package appsync
 
 import (
 	"context"
+
+	"github.com/exanubes/appsync/internal/app"
 )
 
 type ConnectionOptions struct {
-	HttpEndpoint string
-	WsEndpoint   string
-	Subprotocols []string
-	Region       string
 	Endpoint     string
+	Subprotocols []string
+	Authorizer   Authorizer
+	Logger       app.Logger
 }
 
 type PublishCommandInput struct {
@@ -49,3 +50,12 @@ type Subscription interface {
 	// Blocks until a message is received or the context is cancelled.
 	DecodeNext(context.Context, any) error
 }
+
+// Authorizer is used for generating subprotocol and authorizing outgoing messages
+type Authorizer interface {
+	Authorize(context.Context, AuthorizeCommandInput) (Signature, error)
+}
+
+type AuthorizeCommandInput app.AuthorizeCommandInput
+
+type Signature app.Signature

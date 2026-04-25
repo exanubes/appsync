@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"time"
 
@@ -22,11 +23,14 @@ func main() {
 	println("AWS_REGION", AWS_REGION)
 	println("CHANNEl", CHANNEL)
 	ctx := context.Background()
+	http_endpoint, _ := url.Parse(HTTP_ENDPOINT)
+	authorizer := appsync.NewIAMAuthorizer(AWS_REGION, http_endpoint)
+	// logger := logger.New()
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
-		HttpEndpoint: HTTP_ENDPOINT,
-		WsEndpoint:   WS_ENDPOINT,
-		Region:       AWS_REGION,
+		Endpoint:     WS_ENDPOINT,
 		Subprotocols: []string{appsync.ProtocolEvents},
+		Authorizer:   authorizer,
+		// Logger:       logger,
 	})
 
 	if err != nil {
