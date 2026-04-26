@@ -10,6 +10,11 @@ output "WS_CHANNEL" {
   value = aws_appsync_channel_namespace.dev.name
 }
 
+output "APPSYNC_API_KEY" {
+  value     = aws_appsync_api_key.dev.key
+  sensitive = true
+}
+
 output "REGION" {
   value = data.aws_region.current.id
 }
