@@ -28,8 +28,6 @@ func (service *ConnectionService) Connect(ctx context.Context, input CreateConne
 		return nil, err
 	}
 
-	service.logger.Debug("", "subprotocol", subprotocol)
-
 	conn, err := service.dialer.Dial(ctx, DialOptions{
 		Url:          input.Url,
 		Subprotocols: append(input.Subprotocols, subprotocol),

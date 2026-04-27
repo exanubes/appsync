@@ -10,27 +10,31 @@ import (
 	"time"
 
 	"github.com/exanubes/appsync"
+	"github.com/exanubes/appsync/internal/infrastructure/logger"
 )
 
 var HTTP_ENDPOINT = os.Getenv("HTTP_ENDPOINT")
 var WS_ENDPOINT = os.Getenv("WS_ENDPOINT")
 var AWS_REGION = os.Getenv("AWS_REGION")
 var CHANNEL = os.Getenv("CHANNEL")
+var APPSYNC_API_KEY = os.Getenv("APPSYNC_API_KEY")
 
 func main() {
 	println("HTTP_ENDPOINT", HTTP_ENDPOINT)
 	println("WS_ENDPOINT", WS_ENDPOINT)
 	println("AWS_REGION", AWS_REGION)
 	println("CHANNEl", CHANNEL)
+	println("APPSYNC_API_KEY", APPSYNC_API_KEY)
 	ctx := context.Background()
 	http_endpoint, _ := url.Parse(HTTP_ENDPOINT)
-	authorizer := appsync.NewIAMAuthorizer(AWS_REGION, http_endpoint)
-	// logger := logger.New()
+	// authorizer := appsync.NewIAMAuthorizer(AWS_REGION, http_endpoint)
+	authorizer := appsync.NewApiKeyAuthorizer(APPSYNC_API_KEY, http_endpoint)
+	logger := logger.New()
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     WS_ENDPOINT,
 		Subprotocols: []string{appsync.ProtocolEvents},
 		Authorizer:   authorizer,
-		// Logger:       logger,
+		Logger:       logger,
 	})
 
 	if err != nil {

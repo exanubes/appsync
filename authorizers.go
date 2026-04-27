@@ -38,3 +38,11 @@ func NewIAMAuthorizer(region string, endpoint *url.URL) Authorizer {
 			authorizer.NewCanonicalRequestFactory(),
 		)}
 }
+
+func NewApiKeyAuthorizer(api_key string, endpoint *url.URL) Authorizer {
+	return &authorizer_adapter{
+		impl: authorizer.NewApiKeyAuthorizer(
+			api_key,
+			endpoint,
+		)}
+}

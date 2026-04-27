@@ -45,7 +45,7 @@ func (codec Codec) Decode(payload app.Payload) (app.Message, error) {
 		err := json.Unmarshal(payload, &event)
 		return event.ToProtocol(), err
 
-	case protocol.TypeError, protocol.TypePublishError, protocol.TypeSubscribeError, protocol.TypeUnsubscribeError:
+	case protocol.TypeConnectionError, protocol.TypeError, protocol.TypePublishError, protocol.TypeSubscribeError, protocol.TypeUnsubscribeError:
 		event := events.ErrorEvent{}
 		err := json.Unmarshal(payload, &event)
 		return event.ToProtocol(), err

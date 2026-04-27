@@ -48,7 +48,6 @@ func (session *AuthorizeConnectionService) Authorize(ctx context.Context, connec
 		if err != nil {
 			return 0, err
 		}
-		session.logger.Debug("Success", "data", string(event))
 
 		msg, err := session.codec.Decode(event)
 		if err != nil {
