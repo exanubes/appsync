@@ -28,7 +28,8 @@ func main() {
 	ctx := context.Background()
 	http_endpoint, _ := url.Parse(HTTP_ENDPOINT)
 	// authorizer := appsync.NewIAMAuthorizer(AWS_REGION, http_endpoint)
-	authorizer := appsync.NewApiKeyAuthorizer(APPSYNC_API_KEY, http_endpoint)
+	// authorizer := appsync.NewApiKeyAuthorizer(APPSYNC_API_KEY, http_endpoint)
+	authorizer := appsync.NewLambdaAuthorizer("custom-token", http_endpoint)
 	logger := logger.New()
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     WS_ENDPOINT,

@@ -46,3 +46,11 @@ func NewApiKeyAuthorizer(api_key string, endpoint *url.URL) Authorizer {
 			endpoint,
 		)}
 }
+
+func NewLambdaAuthorizer(token string, endpoint *url.URL) Authorizer {
+	return &authorizer_adapter{
+		impl: authorizer.NewLambdaAuthorizer(
+			token,
+			endpoint,
+		)}
+}

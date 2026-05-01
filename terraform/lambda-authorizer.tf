@@ -4,7 +4,7 @@ resource "aws_lambda_function" "authorizer" {
   filename         = "../dist/authorizer/function.zip"
   source_code_hash = filebase64sha256("../dist/authorizer/function.zip")
   handler          = "bootstrap"
-  runtime          = "provided.al2"
+  runtime          = "provided.al2023"
   architectures    = ["arm64"]
 }
 
@@ -26,16 +26,10 @@ resource "aws_iam_role_policy_attachment" "authorizer-basic-execution-role-attac
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_iam_role_policy" "authorizer-role-attachment" {
-  role = aws_iam_role.authorizer.name
-  name = "authorizer-role-permissions-attachment"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-      ],
-      Resource = ""
-    }]
-  })
+resource "aws_lambda_permission" "appsync_invoke_authorizer" {
+  statement_id  = "AllowAppSyncInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.authorizer.function_name
+  principal     = "appsync.amazonaws.com"
+  source_arn    = aws_appsync_api.dev.api_arn
 }
