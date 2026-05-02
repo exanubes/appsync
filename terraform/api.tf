@@ -14,12 +14,20 @@ resource "aws_appsync_api" "dev" {
     }
 
     auth_provider {
-      auth_type = "AWS_LAMBDA"
-      lambda_authorizer_config {
-        authorizer_uri                   = aws_lambda_function.authorizer.arn
-        authorizer_result_ttl_in_seconds = 300
+      auth_type = "AMAZON_COGNITO_USER_POOLS"
+      cognito_config {
+        user_pool_id = aws_cognito_user_pool.dev.id
+        aws_region   = data.aws_region.current.region
       }
     }
+
+    # auth_provider {
+    #   auth_type = "AWS_LAMBDA"
+    #   lambda_authorizer_config {
+    #     authorizer_uri                   = aws_lambda_function.authorizer.arn
+    #     authorizer_result_ttl_in_seconds = 300
+    #   }
+    # }
 
     connection_auth_mode {
       auth_type = "AWS_IAM"
@@ -30,8 +38,12 @@ resource "aws_appsync_api" "dev" {
     }
 
     connection_auth_mode {
-      auth_type = "AWS_LAMBDA"
+      auth_type = "AMAZON_COGNITO_USER_POOLS"
     }
+
+    # connection_auth_mode {
+    #   auth_type = "AWS_LAMBDA"
+    # }
 
     default_publish_auth_mode {
       auth_type = "API_KEY"
@@ -55,8 +67,12 @@ resource "aws_appsync_channel_namespace" "dev" {
     auth_type = "API_KEY"
   }
 
+  # subscribe_auth_mode {
+  #   auth_type = "AWS_LAMBDA"
+  # }
+
   subscribe_auth_mode {
-    auth_type = "AWS_LAMBDA"
+    auth_type = "AMAZON_COGNITO_USER_POOLS"
   }
 
   publish_auth_mode {
@@ -67,9 +83,12 @@ resource "aws_appsync_channel_namespace" "dev" {
     auth_type = "API_KEY"
   }
 
-  publish_auth_mode {
-    auth_type = "AWS_LAMBDA"
+  # publish_auth_mode {
+  #   auth_type = "AWS_LAMBDA"
+  # }
 
+  publish_auth_mode {
+    auth_type = "AMAZON_COGNITO_USER_POOLS"
   }
 }
 

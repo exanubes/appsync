@@ -1,6 +1,7 @@
 include .env
+export
 
-.PHONY: deploy destroy plan dev tf-output build-authorizer
+.PHONY: deploy destroy plan dev tf-output build-authorizer create-user authenticate-user
 
 deploy:
 	cd terraform && terraform apply -auto-approve
@@ -21,3 +22,23 @@ build-authorizer:
 	mkdir -p dist/authorizer
 	GOOS=linux GOARCH=arm64 go build -o dist/authorizer/bootstrap ./cmd/authorizer/
 	cd dist/authorizer && zip -j function.zip bootstrap
+
+create-user:
+ifndef USERNAME
+	$(error USERNAME is not set. Usage: make create-user USERNAME=<user> PASSWORD=<pass>)
+endif
+ifndef PASSWORD
+	$(error PASSWORD is not set. Usage: make create-user USERNAME=<user> PASSWORD=<pass>)
+endif
+	bash scripts/create-user.sh "$(USERNAME)" "$(PASSWORD)"
+	$(MAKE) authenticate-user
+
+authenticate-user:
+ifndef USERNAME
+	$(error USERNAME is not set. Usage: make authenticate-user USERNAME=<user> PASSWORD=<pass>)
+endif
+ifndef PASSWORD
+	$(error PASSWORD is not set. Usage: make authenticate-user USERNAME=<user> PASSWORD=<pass>)
+endif
+	bash scripts/authenticate-user.sh "$(USERNAME)" "$(PASSWORD)"
+
