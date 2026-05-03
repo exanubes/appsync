@@ -20,8 +20,15 @@ func main() {
 		fmt.Println("----")
 		fmt.Printf("EVENT: %+v\n", event)
 		fmt.Println("###")
+
+		authorized := true
+
+		if token != "custom-token" {
+			authorized = false
+		}
+
 		return events.AppSyncLambdaAuthorizerResponse{
-			IsAuthorized: true,
+			IsAuthorized: authorized,
 			ResolverContext: map[string]interface{}{
 				"userId": "1234",
 			},

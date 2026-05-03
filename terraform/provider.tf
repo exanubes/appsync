@@ -8,4 +8,6 @@ terraform {
   }
 }
 
-provider "aws" {}
+provider "aws" {
+  region = "eu-central-1"
+}

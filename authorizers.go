@@ -49,7 +49,7 @@ func NewApiKeyAuthorizer(api_key string, endpoint *url.URL) Authorizer {
 
 func NewLambdaAuthorizer(token string, endpoint *url.URL) Authorizer {
 	return &authorizer_adapter{
-		impl: authorizer.NewLambdaAuthorizer(
+		impl: authorizer.NewTokenAuthorizer(
 			token,
 			endpoint,
 		)}
@@ -57,7 +57,7 @@ func NewLambdaAuthorizer(token string, endpoint *url.URL) Authorizer {
 
 func NewCognitoAuthorizer(token string, endpoint *url.URL) Authorizer {
 	return &authorizer_adapter{
-		impl: authorizer.NewCognitoAuthorizer(
+		impl: authorizer.NewTokenAuthorizer(
 			token,
 			endpoint,
 		)}
