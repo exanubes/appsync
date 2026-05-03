@@ -1,3 +1,4 @@
+
 resource "aws_cognito_user_pool" "dev" {
   name = "appsync-dev"
 
@@ -44,4 +45,34 @@ resource "aws_cognito_user_pool_client" "dev" {
     access_token = "minutes"
     id_token     = "minutes"
   }
+}
+
+resource "aws_cognito_user_pool_domain" "dev" {
+  domain       = "appsync-dev-exanubes"
+  user_pool_id = aws_cognito_user_pool.dev.id
+}
+
+resource "aws_cognito_resource_server" "appsync" {
+  user_pool_id = aws_cognito_user_pool.dev.id
+
+  identifier = "exanubes"
+  name       = "exanubes"
+
+  scope {
+    scope_name        = "custom"
+    scope_description = "Need a custom scope for making oidc client work with client_credentials oauth flow"
+  }
+}
+
+resource "aws_cognito_user_pool_client" "oidc" {
+  name         = "appsync-dev-oidc-client"
+  user_pool_id = aws_cognito_user_pool.dev.id
+
+  allowed_oauth_flows_user_pool_client = true
+  allowed_oauth_flows                  = ["client_credentials"]
+  allowed_oauth_scopes = [
+    "exanubes/custom"
+  ]
+  generate_secret = true
+  depends_on      = [aws_cognito_resource_server.appsync]
 }

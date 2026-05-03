@@ -19,6 +19,7 @@ var AWS_REGION = os.Getenv("AWS_REGION")
 var CHANNEL = os.Getenv("CHANNEL")
 var APPSYNC_API_KEY = os.Getenv("APPSYNC_API_KEY")
 var COGNITO_AUTH_TOKEN = os.Getenv("ID_TOKEN")
+var OIDC_AUTH_TOKEN = os.Getenv("OIDC_TOKEN")
 
 func main() {
 	println("HTTP_ENDPOINT", HTTP_ENDPOINT)
@@ -31,7 +32,7 @@ func main() {
 	// authorizer := appsync.NewIAMAuthorizer(AWS_REGION, http_endpoint)
 	// authorizer := appsync.NewApiKeyAuthorizer(APPSYNC_API_KEY, http_endpoint)
 	// authorizer := appsync.NewLambdaAuthorizer("custom-token", http_endpoint)
-	authorizer := appsync.NewCognitoAuthorizer(COGNITO_AUTH_TOKEN, http_endpoint)
+	authorizer := appsync.NewOidcAuthorizer(OIDC_AUTH_TOKEN, http_endpoint)
 	logger := logger.New()
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     WS_ENDPOINT,

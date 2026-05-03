@@ -62,3 +62,11 @@ func NewCognitoAuthorizer(token string, endpoint *url.URL) Authorizer {
 			endpoint,
 		)}
 }
+
+func NewOidcAuthorizer(token string, endpoint *url.URL) Authorizer {
+	return &authorizer_adapter{
+		impl: authorizer.NewTokenAuthorizer(
+			token,
+			endpoint,
+		)}
+}

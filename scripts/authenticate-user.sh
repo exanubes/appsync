@@ -40,12 +40,12 @@ set_env_var() {
   fi
 }
 
-set_env_var "ACCESS_TOKEN"  "$ACCESS_TOKEN"  "$ENV_FILE"
+# set_env_var "ACCESS_TOKEN"  "$ACCESS_TOKEN"  "$ENV_FILE"
 set_env_var "ID_TOKEN"      "$ID_TOKEN"      "$ENV_FILE"
-set_env_var "REFRESH_TOKEN" "$REFRESH_TOKEN" "$ENV_FILE"
+# set_env_var "REFRESH_TOKEN" "$REFRESH_TOKEN" "$ENV_FILE"
 
 echo ""
 echo "Tokens saved to .env:"
-echo "  ACCESS_TOKEN"
+# echo "  ACCESS_TOKEN"
 echo "  ID_TOKEN"
-echo "  REFRESH_TOKEN"
+# echo "  REFRESH_TOKEN"

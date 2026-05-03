@@ -26,3 +26,9 @@ output "USER_POOL" {
 output "USER_POOL_CLIENT" {
   value = aws_cognito_user_pool_client.dev.id
 }
+
+
+output "OIDC_CLIENT_ID" {
+  value = aws_cognito_user_pool_client.oidc.id
+}
+
