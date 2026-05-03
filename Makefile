@@ -16,7 +16,7 @@ tf-output:
 	cd terraform && terraform output
 
 dev:
-	APPSYNC_API_KEY=$(APPSYNC_API_KEY) HTTP_ENDPOINT=$(HTTP_ENDPOINT) WS_ENDPOINT=$(WS_ENDPOINT) CHANNEL=$(CHANNEL) AWS_REGION=$(AWS_REGION) go run ./cmd/dev/
+	APPSYNC_API_KEY=$(APPSYNC_API_KEY) HTTP_ENDPOINT=$(HTTP_ENDPOINT) WS_ENDPOINT=$(WS_ENDPOINT) CHANNEL=$(CHANNEL) AWS_REGION=$(AWS_REGION) ID_TOKEN=$(ID_TOKEN) go run ./cmd/dev/
 
 build-authorizer:
 	mkdir -p dist/authorizer

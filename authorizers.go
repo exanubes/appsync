@@ -54,3 +54,11 @@ func NewLambdaAuthorizer(token string, endpoint *url.URL) Authorizer {
 			endpoint,
 		)}
 }
+
+func NewCognitoAuthorizer(token string, endpoint *url.URL) Authorizer {
+	return &authorizer_adapter{
+		impl: authorizer.NewCognitoAuthorizer(
+			token,
+			endpoint,
+		)}
+}
