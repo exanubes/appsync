@@ -55,6 +55,10 @@ func (f *fake_clock) NewTimer(_ time.Duration) app.Timer {
 	return f.timer
 }
 
+func (f *fake_clock) Now() time.Time {
+	return time.Time{}
+}
+
 type start_result struct {
 	err error
 }

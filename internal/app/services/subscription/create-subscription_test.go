@@ -33,7 +33,7 @@ func TestCreate(t *testing.T) {
 	for _, tc := range test_cases {
 		t.Run(tc.name, func(t *testing.T) {
 			registry := &mock_registry{}
-			service := sub_service.NewCreateSubscriptionService(registry)
+			service := sub_service.NewCreateSubscriptionService(registry, 1)
 			result, err := service.Create(sub_service.CreateSubscriptionInput{
 				ID:      tc.id,
 				Channel: tc.channel,
