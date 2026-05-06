@@ -17,11 +17,16 @@ type iam_authorizer struct {
 	endpoint *url.URL
 }
 
-func IAM(region string, endpoint *url.URL) port.Authorizer {
+type IAMAuthorizerConfig struct {
+	Region   string
+	Endpoint *url.URL
+}
+
+func IAM(config IAMAuthorizerConfig) port.Authorizer {
 	credentials_provider := &internal.AwsCredentialsProvider{}
 	clock := clock.New()
-	signer := &internal.Sigv4Signer{Provider: credentials_provider, Region: region, Clock: clock}
-	return new_iam_authorizer(endpoint, signer, internal.CanonicalRequest{})
+	signer := &internal.Sigv4Signer{Provider: credentials_provider, Region: config.Region, Clock: clock}
+	return new_iam_authorizer(config.Endpoint, signer, internal.CanonicalRequest{})
 }
 
 func new_iam_authorizer(endpoint *url.URL, signer internal.Signer, factory internal.RequestFactory) *iam_authorizer {

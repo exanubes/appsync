@@ -12,18 +12,21 @@ type api_key_authorizer struct {
 	endpoint *url.URL
 }
 
-func ApiKey(api_key string, endpoint *url.URL) port.Authorizer {
-	return &api_key_authorizer{api_key, endpoint}
+type ApiKeyAuthorizerConfig struct {
+	ApiKey   string
+	Endpoint *url.URL
+}
+
+func ApiKey(config ApiKeyAuthorizerConfig) port.Authorizer {
+	return &api_key_authorizer{endpoint: config.Endpoint, api_key: config.ApiKey}
 
 }
 
 func (authorizer *api_key_authorizer) Authorize(ctx context.Context, input port.AuthorizeCommandInput) (*port.AuthorizeCommandOutput, error) {
-	headers := map[string]string{
-		"host":      authorizer.endpoint.Host,
-		"x-api-key": authorizer.api_key,
-	}
-
 	return &port.AuthorizeCommandOutput{
-		Signature: headers,
+		Signature: map[string]string{
+			"host":      authorizer.endpoint.Host,
+			"x-api-key": authorizer.api_key,
+		},
 	}, nil
 }

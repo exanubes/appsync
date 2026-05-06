@@ -12,10 +12,15 @@ type token_authorizer struct {
 	endpoint   *url.URL
 }
 
-func Token(auth_token string, endpoint *url.URL) port.Authorizer {
+type TokenAuthorizerConfig struct {
+	AuthToken string
+	Endpoint  *url.URL
+}
+
+func Token(config TokenAuthorizerConfig) port.Authorizer {
 	return &token_authorizer{
-		auth_token: auth_token,
-		endpoint:   endpoint,
+		auth_token: config.AuthToken,
+		endpoint:   config.Endpoint,
 	}
 }
 
