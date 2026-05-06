@@ -30,7 +30,10 @@ func main() {
 	println("APPSYNC_API_KEY", appsync_api_key)
 	ctx := context.Background()
 	http_endpoint, _ := url.Parse(http_endpoint)
-	authorizer := authorizer.IAM(aws_region, http_endpoint)
+	authorizer := authorizer.IAM(authorizer.IAMAuthorizerConfig{
+		Endpoint: http_endpoint,
+		Region:   aws_region,
+	})
 	// authorizer := authorizer.ApiKey(APPSYNC_API_KEY, http_endpoint)
 	// authorizer := authorizer.Token("custom-token", http_endpoint)
 	// authorizer := authorizer.Token(COGNITO_AUTH_TOKEN, http_endpoint)

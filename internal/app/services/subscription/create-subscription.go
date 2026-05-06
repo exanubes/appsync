@@ -4,21 +4,20 @@ import (
 	"github.com/exanubes/appsync/internal/app/subscription"
 )
 
-// TODO: config that defines buffer sizes
-var buffer_size uint = 100
-
 type CreateSubscriptionService struct {
-	registry Registry
+	registry     Registry
+	backpressure uint
 }
 
-func NewCreateSubscriptionService(registry Registry) *CreateSubscriptionService {
+func NewCreateSubscriptionService(registry Registry, backpressure uint) *CreateSubscriptionService {
 	return &CreateSubscriptionService{
-		registry: registry,
+		registry:     registry,
+		backpressure: backpressure,
 	}
 }
 
 func (service *CreateSubscriptionService) Create(input CreateSubscriptionInput) (*subscription.Subscription, error) {
-	sub, err := subscription.New(input.ID, input.Channel, buffer_size)
+	sub, err := subscription.New(input.ID, input.Channel, service.backpressure)
 	if err != nil {
 		return nil, err
 	}

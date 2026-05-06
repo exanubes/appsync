@@ -24,9 +24,10 @@ func NewUseCases(authorizer app.RequestAuthorizer,
 	ingress *queue.IngressQueue,
 	egress *queue.EgressQueue,
 	pending *pending.Registry,
+	subscription_backpressure uint,
 ) *UseCases {
 	subscriptions_registry := subscription.NewRegistry()
-	create_subscription_service := sub_service.NewCreateSubscriptionService(subscriptions_registry)
+	create_subscription_service := sub_service.NewCreateSubscriptionService(subscriptions_registry, subscription_backpressure)
 	send_request_service := request.NewSendRequestService(egress, pending)
 	publish_usecase := publish.NewPublishMessageUsecase(authorizer, send_request_service)
 

@@ -31,12 +31,20 @@ type builder struct {
 	authorizer   port.Authorizer
 	subprotocols []string
 	logger       app.Logger
+	backpressure Backpressure
+}
+
+var default_backpressure_config = Backpressure{
+	ConnectionInbound:  100,
+	ConnectionOutbound: 100,
+	SubscriptionEvents: 100,
 }
 
 // Creates a ConnectionBuilder for a step by step configuration
 func new_builder() *builder {
 	return &builder{
-		logger: logger.NoopLogger{},
+		logger:       logger.NoopLogger{},
+		backpressure: default_backpressure_config,
 	}
 }
 
@@ -78,6 +86,24 @@ func (builder *builder) WithLogger(logger app.Logger) *builder {
 	return builder
 }
 
+func (builder *builder) WithBackpressure(config Backpressure) *builder {
+	if config.ConnectionInbound != 0 {
+		builder.backpressure.ConnectionInbound = config.ConnectionInbound
+
+	}
+
+	if config.ConnectionOutbound != 0 {
+		builder.backpressure.ConnectionOutbound = config.ConnectionOutbound
+
+	}
+
+	if config.SubscriptionEvents != 0 {
+		builder.backpressure.SubscriptionEvents = config.SubscriptionEvents
+
+	}
+	return builder
+}
+
 // Validates inputs and creates a websocket connection
 func (builder *builder) Connect(ctx context.Context) (*AppsyncClient, error) {
 	if len(builder.errors) != 0 {
@@ -107,8 +133,8 @@ func (builder *builder) Connect(ctx context.Context) (*AppsyncClient, error) {
 
 	clock := clock.New()
 	heartbeat := heartbeat.New(clock)
-	ingress_queue := queue.NewIngressQueue(100)
-	egress_queue := queue.NewEgressQueue(100)
+	ingress_queue := queue.NewIngressQueue(builder.backpressure.ConnectionInbound)
+	egress_queue := queue.NewEgressQueue(builder.backpressure.ConnectionOutbound)
 	pending_registry := pending.NewRegistry()
 	io_loops := io.New(ingress_queue, egress_queue, connection_output.Connection, msg_codec)
 	usecases := composition.NewUseCases(
@@ -116,6 +142,7 @@ func (builder *builder) Connect(ctx context.Context) (*AppsyncClient, error) {
 		ingress_queue,
 		egress_queue,
 		pending_registry,
+		builder.backpressure.SubscriptionEvents,
 	)
 	msg_router := router.New(pending_registry, usecases.ReceiveData)
 	runtime := runtime.New(ingress_queue, msg_router, heartbeat)
@@ -139,7 +166,8 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 		WithAuthorizer(options.Authorizer).
 		WithEndpoint(options.Endpoint).
 		WithLogger(options.Logger).
-		WithSubprotocol(options.Subprotocols...)
+		WithSubprotocol(options.Subprotocols...).
+		WithBackpressure(options.Backpressure)
 
 	return builder.Connect(ctx)
 }

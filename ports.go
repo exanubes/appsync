@@ -12,6 +12,17 @@ type ConnectionOptions struct {
 	Subprotocols []string
 	Authorizer   port.Authorizer
 	Logger       app.Logger
+	Backpressure Backpressure
+}
+
+// Buffer sizes directly impact memory consumption.
+// Large buffer configurations combined with high subscription counts or large payloads may result in substantial memory usage.
+// Tune buffer sizes according to your workload characteristics and available system resources.
+// Buffer limits are enforced per connection/subscription. The library does not impose a global memory limit or adaptive backpressure mechanism.
+type Backpressure struct {
+	ConnectionInbound  uint
+	ConnectionOutbound uint
+	SubscriptionEvents uint
 }
 
 type PublishCommandInput struct {
@@ -50,18 +61,4 @@ type Subscription interface {
 	// DecodeNext returns the next message from the channel and unmarshals it into value.
 	// Blocks until a message is received or the context is cancelled.
 	DecodeNext(context.Context, any) error
-}
-
-// Authorizer is used for generating subprotocol and authorizing outgoing messages
-type Authorizer interface {
-	Authorize(context.Context, AuthorizeCommandInput) (AuthorizeCommandOutput, error)
-}
-
-type AuthorizeCommandInput struct {
-	Channel string
-	Payload []byte
-}
-
-type AuthorizeCommandOutput struct {
-	Signature map[string]string
 }
