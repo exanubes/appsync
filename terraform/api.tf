@@ -39,15 +39,15 @@ resource "aws_appsync_api" "dev" {
     }
 
     connection_auth_mode {
-      auth_type = "OPENID_CONNECT"
+      auth_type = "AWS_IAM"
     }
 
     default_publish_auth_mode {
-      auth_type = "OPENID_CONNECT"
+      auth_type = "AWS_IAM"
     }
 
     default_subscribe_auth_mode {
-      auth_type = "OPENID_CONNECT"
+      auth_type = "AWS_IAM"
     }
   }
 }
@@ -58,11 +58,11 @@ resource "aws_appsync_channel_namespace" "dev" {
   api_id = aws_appsync_api.dev.api_id
 
   subscribe_auth_mode {
-    auth_type = "OPENID_CONNECT"
+    auth_type = "AWS_IAM"
   }
 
   publish_auth_mode {
-    auth_type = "OPENID_CONNECT"
+    auth_type = "AWS_IAM"
   }
 }
 

@@ -16,24 +16,28 @@ import (
 	"github.com/exanubes/appsync/internal/app/services/connection"
 	"github.com/exanubes/appsync/internal/app/services/io"
 	"github.com/exanubes/appsync/internal/composition"
+	"github.com/exanubes/appsync/internal/infrastructure/authorizer"
 	"github.com/exanubes/appsync/internal/infrastructure/clock"
 	"github.com/exanubes/appsync/internal/infrastructure/codec"
 	"github.com/exanubes/appsync/internal/infrastructure/logger"
 	"github.com/exanubes/appsync/internal/infrastructure/serializer"
 	"github.com/exanubes/appsync/internal/infrastructure/transport"
+	"github.com/exanubes/appsync/port"
 )
 
 type builder struct {
 	errors       []error
 	endpoint     *url.URL
-	authorizer   app.RequestAuthorizer
+	authorizer   port.Authorizer
 	subprotocols []string
 	logger       app.Logger
 }
 
 // Creates a ConnectionBuilder for a step by step configuration
-func New() *builder {
-	return &builder{}
+func new_builder() *builder {
+	return &builder{
+		logger: logger.NoopLogger{},
+	}
 }
 
 // Parses endpoint into a URL
@@ -51,18 +55,13 @@ func (builder *builder) WithEndpoint(endpoint string) *builder {
 
 // Sets authorizer
 // Options: IAM, Lambda, Open ID Connect, Cognito User Pool, API Key
-func (builder *builder) WithAuthorizer(authorizer Authorizer) *builder {
-	if authorizer == nil {
+func (builder *builder) WithAuthorizer(authz port.Authorizer) *builder {
+	if authz == nil {
 		builder.errors = append(builder.errors, errors.New("Authorizer can't be nil"))
 		return builder
 	}
-	request_authorizer, ok := authorizer.(*authorizer_adapter)
 
-	if !ok {
-		builder.errors = append(builder.errors, errors.New("Invalid authorizer"))
-	}
-
-	builder.authorizer = request_authorizer.impl
+	builder.authorizer = authz
 
 	return builder
 }
@@ -89,16 +88,12 @@ func (builder *builder) Connect(ctx context.Context) (*AppsyncClient, error) {
 		return nil, errors.New("Authorizer is required")
 	}
 
-	if builder.logger == nil {
-		builder.logger = logger.NoopLogger{}
-	}
-
 	dialer := transport.New()
 	msg_codec := codec.New()
 	base64_serializer := serializer.New()
-
-	generate_subprotocol_service := connection.NewGenerateSubprotocolService(builder.authorizer, base64_serializer)
-	authorize_connection_service := connection.NewAuthorizeConnectionService(msg_codec, builder.authorizer, builder.logger)
+	request_authorizer := authorizer.NewInternalAdapter(builder.authorizer)
+	generate_subprotocol_service := connection.NewGenerateSubprotocolService(request_authorizer, base64_serializer)
+	authorize_connection_service := connection.NewAuthorizeConnectionService(msg_codec, request_authorizer, builder.logger)
 	create_connection_service := connection.NewConnectionService(dialer, authorize_connection_service, generate_subprotocol_service, builder.logger)
 
 	connection_output, err := create_connection_service.Connect(ctx, connection.CreateConnectionInput{
@@ -117,7 +112,7 @@ func (builder *builder) Connect(ctx context.Context) (*AppsyncClient, error) {
 	pending_registry := pending.NewRegistry()
 	io_loops := io.New(ingress_queue, egress_queue, connection_output.Connection, msg_codec)
 	usecases := composition.NewUseCases(
-		builder.authorizer,
+		request_authorizer,
 		ingress_queue,
 		egress_queue,
 		pending_registry,
@@ -138,7 +133,7 @@ func (builder *builder) Connect(ctx context.Context) (*AppsyncClient, error) {
 
 // Connect establishes a new AppSync WebSocket connection and returns a Client.
 func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, error) {
-	builder := New()
+	builder := new_builder()
 
 	builder.
 		WithAuthorizer(options.Authorizer).

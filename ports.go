@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/exanubes/appsync/internal/app"
+	"github.com/exanubes/appsync/port"
 )
 
 type ConnectionOptions struct {
 	Endpoint     string
 	Subprotocols []string
-	Authorizer   Authorizer
+	Authorizer   port.Authorizer
 	Logger       app.Logger
 }
 
@@ -53,9 +54,14 @@ type Subscription interface {
 
 // Authorizer is used for generating subprotocol and authorizing outgoing messages
 type Authorizer interface {
-	Authorize(context.Context, AuthorizeCommandInput) (Signature, error)
+	Authorize(context.Context, AuthorizeCommandInput) (AuthorizeCommandOutput, error)
 }
 
-type AuthorizeCommandInput app.AuthorizeCommandInput
+type AuthorizeCommandInput struct {
+	Channel string
+	Payload []byte
+}
 
-type Signature app.Signature
+type AuthorizeCommandOutput struct {
+	Signature map[string]string
+}

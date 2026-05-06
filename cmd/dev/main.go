@@ -10,32 +10,34 @@ import (
 	"time"
 
 	"github.com/exanubes/appsync"
+	"github.com/exanubes/appsync/authorizer"
 	"github.com/exanubes/appsync/internal/infrastructure/logger"
 )
 
-var HTTP_ENDPOINT = os.Getenv("HTTP_ENDPOINT")
-var WS_ENDPOINT = os.Getenv("WS_ENDPOINT")
-var AWS_REGION = os.Getenv("AWS_REGION")
-var CHANNEL = os.Getenv("CHANNEL")
-var APPSYNC_API_KEY = os.Getenv("APPSYNC_API_KEY")
-var COGNITO_AUTH_TOKEN = os.Getenv("ID_TOKEN")
-var OIDC_AUTH_TOKEN = os.Getenv("OIDC_TOKEN")
+var http_endpoint = os.Getenv("HTTP_ENDPOINT")
+var ws_endpoint = os.Getenv("WS_ENDPOINT")
+var aws_region = os.Getenv("AWS_REGION")
+var channel = os.Getenv("CHANNEL")
+var appsync_api_key = os.Getenv("APPSYNC_API_KEY")
+var cognito_auth_token = os.Getenv("ID_TOKEN")
+var oidc_auth_token = os.Getenv("OIDC_TOKEN")
 
 func main() {
-	println("HTTP_ENDPOINT", HTTP_ENDPOINT)
-	println("WS_ENDPOINT", WS_ENDPOINT)
-	println("AWS_REGION", AWS_REGION)
-	println("CHANNEl", CHANNEL)
-	println("APPSYNC_API_KEY", APPSYNC_API_KEY)
+	println("HTTP_ENDPOINT", http_endpoint)
+	println("WS_ENDPOINT", ws_endpoint)
+	println("AWS_REGION", aws_region)
+	println("CHANNEl", channel)
+	println("APPSYNC_API_KEY", appsync_api_key)
 	ctx := context.Background()
-	http_endpoint, _ := url.Parse(HTTP_ENDPOINT)
-	// authorizer := appsync.NewIAMAuthorizer(AWS_REGION, http_endpoint)
-	// authorizer := appsync.NewApiKeyAuthorizer(APPSYNC_API_KEY, http_endpoint)
-	// authorizer := appsync.NewLambdaAuthorizer("custom-token", http_endpoint)
-	authorizer := appsync.NewOidcAuthorizer(OIDC_AUTH_TOKEN, http_endpoint)
+	http_endpoint, _ := url.Parse(http_endpoint)
+	authorizer := authorizer.IAM(aws_region, http_endpoint)
+	// authorizer := authorizer.ApiKey(APPSYNC_API_KEY, http_endpoint)
+	// authorizer := authorizer.Token("custom-token", http_endpoint)
+	// authorizer := authorizer.Token(COGNITO_AUTH_TOKEN, http_endpoint)
+	// authorizer := authorizer.Token(OIDC_AUTH_TOKEN, http_endpoint)
 	logger := logger.New()
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
-		Endpoint:     WS_ENDPOINT,
+		Endpoint:     ws_endpoint,
 		Subprotocols: []string{appsync.ProtocolEvents},
 		Authorizer:   authorizer,
 		Logger:       logger,
@@ -55,7 +57,7 @@ func main() {
 		}
 	}()
 
-	event := Event{
+	event := event_msg{
 		Message: "Hello World!",
 	}
 
@@ -69,7 +71,7 @@ func main() {
 	defer cancel()
 
 	output, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
-		Channel: CHANNEL + "/test",
+		Channel: channel + "/test",
 	})
 
 	if err != nil {
@@ -78,13 +80,13 @@ func main() {
 
 	err = client.Publish(ctx, appsync.PublishCommandInput{
 		Payload: data,
-		Channel: CHANNEL + "/test",
+		Channel: channel + "/test",
 	})
 
 	if err != nil {
 		log.Fatal(err)
 	}
-	ev := Event{}
+	ev := event_msg{}
 	err = output.Sub.DecodeNext(ctx, &ev)
 
 	if err != nil {
@@ -112,6 +114,6 @@ func main() {
 	}
 }
 
-type Event struct {
+type event_msg struct {
 	Message string `json:"msg"`
 }
