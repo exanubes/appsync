@@ -82,7 +82,9 @@ func (builder *builder) WithSubprotocol(subprotocols ...string) *builder {
 
 // Sets logger
 func (builder *builder) WithLogger(logger app.Logger) *builder {
-	builder.logger = logger
+	if logger != nil {
+		builder.logger = logger
+	}
 	return builder
 }
 
