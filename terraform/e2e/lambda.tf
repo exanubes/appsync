@@ -1,5 +1,5 @@
 resource "aws_lambda_function" "authorizer" {
-  function_name    = "appsync-lambda-e2e-authorizer"
+  function_name    = "e2e-lambda-authorizer"
   role             = aws_iam_role.authorizer.arn
   filename         = "../../dist/authorizer/function.zip"
   source_code_hash = filebase64sha256("../../dist/authorizer/function.zip")
@@ -15,7 +15,7 @@ resource "aws_lambda_function" "authorizer" {
 }
 
 resource "aws_iam_role" "authorizer" {
-  name = "e2e_authorizer"
+  name = "e2e-authorizer"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

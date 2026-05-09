@@ -1,5 +1,5 @@
 resource "aws_appsync_api" "e2e" {
-  name = "appsync-e2e-${random_id.suffix.hex}"
+  name = local.name_prefix
 
 
   event_config {

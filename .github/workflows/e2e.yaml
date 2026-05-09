@@ -1,0 +1,168 @@
+name: e2e
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: eu-central-1
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TERRAFORM_E2E_DIR: terraform/e2e
+
+jobs:
+  e2e:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APPSYNC_E2E_LAMBDA_TOKEN: e2e-lambda-token
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build authorizer
+        run: |
+          mkdir -p dist/authorizer
+          GOOS=linux GOARCH=arm64 go build -o dist/authorizer/bootstrap ./cmd/authorizer/
+          cd dist/authorizer && zip -j function.zip bootstrap
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_E2E_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Terraform init
+        working-directory: ${{ env.TERRAFORM_E2E_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform validate
+        working-directory: ${{ env.TERRAFORM_E2E_DIR }}
+        run: terraform validate
+
+      - name: Terraform apply
+        working-directory: ${{ env.TERRAFORM_E2E_DIR }}
+        run: |
+          terraform apply \
+            -auto-approve \
+            -input=false \
+            -var="aws_region=${AWS_REGION}" \
+            -var="lambda_authorizer_token=${APPSYNC_E2E_LAMBDA_TOKEN}"
+
+      - name: Export Terraform outputs
+        working-directory: ${{ env.TERRAFORM_E2E_DIR }}
+        run: |
+          echo "APPSYNC_E2E_HTTP_ENDPOINT=$(terraform output -raw appsync_http_endpoint)" >> "$GITHUB_ENV"
+          echo "APPSYNC_E2E_WS_ENDPOINT=$(terraform output -raw appsync_ws_endpoint)" >> "$GITHUB_ENV"
+          echo "APPSYNC_E2E_API_KEY=$(terraform output -raw appsync_api_key)" >> "$GITHUB_ENV"
+
+          echo "USER_POOL_ID=$(terraform output -raw user_pool_id)" >> "$GITHUB_ENV"
+          echo "COGNITO_USER_POOL_CLIENT_ID=$(terraform output -raw cognito_user_pool_client_id)" >> "$GITHUB_ENV"
+
+          echo "COGNITO_DOMAIN=$(terraform output -raw cognito_domain)" >> "$GITHUB_ENV"
+          echo "OIDC_USER_POOL_CLIENT_ID=$(terraform output -raw oidc_user_pool_client_id)" >> "$GITHUB_ENV"
+          echo "OIDC_USER_POOL_CLIENT_SECRET=$(terraform output -raw oidc_user_pool_client_secret)" >> "$GITHUB_ENV"
+          echo "OIDC_SCOPE=$(terraform output -raw oidc_scope)" >> "$GITHUB_ENV"
+
+      - name: Create Cognito user and export ID token
+        run: |
+          set -euo pipefail
+
+          username="e2e-user-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          password="e2e-password-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          aws cognito-idp admin-create-user \
+            --user-pool-id "$USER_POOL_ID" \
+            --username "$username" \
+            --message-action SUPPRESS
+
+          aws cognito-idp admin-set-user-password \
+            --user-pool-id "$USER_POOL_ID" \
+            --username "$username" \
+            --password "$password" \
+            --permanent
+
+          auth_result="$(
+            aws cognito-idp initiate-auth \
+              --auth-flow USER_PASSWORD_AUTH \
+              --client-id "$COGNITO_USER_POOL_CLIENT_ID" \
+              --auth-parameters "USERNAME=${username},PASSWORD=${password}"
+          )"
+
+          id_token="$(echo "$auth_result" | jq -r '.AuthenticationResult.IdToken')"
+
+          if [ -z "$id_token" ] || [ "$id_token" = "null" ]; then
+            echo "Failed to obtain Cognito ID token"
+            echo "$auth_result"
+            exit 1
+          fi
+
+          echo "::add-mask::$id_token"
+          echo "APPSYNC_E2E_COGNITO_ID_TOKEN=$id_token" >> "$GITHUB_ENV"
+
+      - name: Export OIDC access token
+        run: |
+          set -euo pipefail
+
+          token_response="$(
+            curl -sf -X POST "${COGNITO_DOMAIN}/oauth2/token" \
+              -u "${OIDC_USER_POOL_CLIENT_ID}:${OIDC_USER_POOL_CLIENT_SECRET}" \
+              -H "Content-Type: application/x-www-form-urlencoded" \
+              -d "grant_type=client_credentials&scope=${OIDC_SCOPE}"
+          )"
+
+          access_token="$(echo "$token_response" | jq -r '.access_token')"
+
+          if [ -z "$access_token" ] || [ "$access_token" = "null" ]; then
+            echo "Failed to obtain OIDC access token"
+            echo "$token_response"
+            exit 1
+          fi
+
+          echo "::add-mask::$access_token"
+          echo "APPSYNC_E2E_OIDC_TOKEN=$access_token" >> "$GITHUB_ENV"
+
+      - name: Run e2e tests
+        run: |
+          go test \
+            -tags=e2e \
+            ./e2e \
+            -count=1 \
+            -timeout=3m \
+            -v
+
+      - name: Terraform destroy
+        if: always()
+        working-directory: ${{ env.TERRAFORM_E2E_DIR }}
+        run: |
+          terraform destroy \
+            -auto-approve \
+            -input=false \
+            -var="aws_region=${AWS_REGION}" \
+            -var="lambda_authorizer_token=${APPSYNC_E2E_LAMBDA_TOKEN}"

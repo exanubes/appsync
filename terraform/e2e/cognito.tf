@@ -4,7 +4,7 @@ resource "random_id" "suffix" {
 }
 
 locals {
-  name_prefix = "appsync-e2e-${random_id.suffix.hex}"
+  name_prefix = "e2e-appsync-${random_id.suffix.hex}"
 }
 
 resource "aws_cognito_user_pool" "e2e" {
