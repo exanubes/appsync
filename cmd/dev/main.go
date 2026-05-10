@@ -73,7 +73,7 @@ func main() {
 
 	defer cancel()
 
-	output, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
+	sub, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
 		Channel: channel + "/test",
 	})
 
@@ -90,7 +90,7 @@ func main() {
 		log.Fatal(err)
 	}
 	ev := event_msg{}
-	err = output.Sub.DecodeNext(ctx, &ev)
+	err = sub.DecodeNext(ctx, &ev)
 
 	if err != nil {
 		log.Fatal(err)
@@ -98,19 +98,19 @@ func main() {
 
 	fmt.Println("EVENT: ", ev)
 
-	err = output.Sub.Close(ctx)
+	err = sub.Close(ctx)
 
 	if err != nil {
 		println("Unsub err: ", err.Error())
 	}
 
-	err = output.Sub.Close(ctx)
+	err = sub.Close(ctx)
 
 	if err != nil {
 		println("Second unsub err: ", err.Error())
 	}
 
-	_, err = output.Sub.Next(ctx)
+	_, err = sub.Next(ctx)
 
 	if err != nil {
 		println("Next after close err: ", err.Error())

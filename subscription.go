@@ -8,20 +8,20 @@ import (
 	"github.com/exanubes/appsync/internal/infrastructure/events"
 )
 
-type ChannelSubscription struct {
+type channel_subscription struct {
 	id           string
 	subscription *subscription.Subscription
 	unsubscribe  unsubscribe.UnsubscribeChannel
 }
 
-func (sub *ChannelSubscription) Close(ctx context.Context) error {
+func (sub *channel_subscription) Close(ctx context.Context) error {
 	return sub.unsubscribe.Execute(ctx, unsubscribe.UnsubscribeChannelCommandInput{
 		SubscriptionId: sub.id,
 		Frame:          &events.FrameBuilder{},
 	})
 }
 
-func (sub *ChannelSubscription) Next(ctx context.Context) (*NextMessageOutput, error) {
+func (sub *channel_subscription) Next(ctx context.Context) (*NextMessageOutput, error) {
 	data, err := sub.subscription.Next(ctx)
 
 	if err != nil {
@@ -32,6 +32,6 @@ func (sub *ChannelSubscription) Next(ctx context.Context) (*NextMessageOutput, e
 	}, nil
 }
 
-func (sub *ChannelSubscription) DecodeNext(ctx context.Context, value any) error {
+func (sub *channel_subscription) DecodeNext(ctx context.Context, value any) error {
 	return sub.subscription.Decode(ctx, value)
 }

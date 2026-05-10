@@ -33,9 +33,6 @@ type PublishCommandInput struct {
 type SubscribeCommandInput struct {
 	Channel string
 }
-type SubscribeCommandOutput struct {
-	Sub Subscription
-}
 
 type NextMessageOutput struct {
 	Data []byte
@@ -46,7 +43,7 @@ type Client interface {
 	// Send a publish message via websocket connection to a particular channel
 	Publish(context.Context, PublishCommandInput) error
 	// Subscribe to a channel and receive messages published to it
-	Subscribe(context.Context, SubscribeCommandInput) (*SubscribeCommandOutput, error)
+	Subscribe(context.Context, SubscribeCommandInput) (Subscription, error)
 	// Close the websocket connection and all open subscriptions created on it
 	Close(context.Context) error
 }

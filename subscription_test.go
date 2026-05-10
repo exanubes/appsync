@@ -24,8 +24,8 @@ func (m *mock_unsubscribe) Execute(_ context.Context, input unsubscribe.Unsubscr
 	return m.err
 }
 
-func make_channel_subscription(id string, sub *subscription.Subscription, u unsubscribe.UnsubscribeChannel) *ChannelSubscription {
-	return &ChannelSubscription{
+func make_channel_subscription(id string, sub *subscription.Subscription, u unsubscribe.UnsubscribeChannel) *channel_subscription {
+	return &channel_subscription{
 		id:           id,
 		subscription: sub,
 		unsubscribe:  u,

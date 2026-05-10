@@ -107,7 +107,7 @@ func (builder *builder) WithBackpressure(config Backpressure) *builder {
 }
 
 // Validates inputs and creates a websocket connection
-func (builder *builder) Connect(ctx context.Context) (*AppsyncClient, error) {
+func (builder *builder) Connect(ctx context.Context) (*appsync_client, error) {
 	if len(builder.errors) != 0 {
 		return nil, fmt.Errorf("Invalid configuration, could not create connection: %+v", builder.errors)
 	}
@@ -153,7 +153,7 @@ func (builder *builder) Connect(ctx context.Context) (*AppsyncClient, error) {
 		Timeout: connection_output.Timeout,
 	})
 
-	return &AppsyncClient{
+	return &appsync_client{
 		transport: connection_output.Connection,
 		runtime:   session,
 		usecases:  usecases,
@@ -161,7 +161,7 @@ func (builder *builder) Connect(ctx context.Context) (*AppsyncClient, error) {
 }
 
 // Connect establishes a new AppSync WebSocket connection and returns a Client.
-func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, error) {
+func Connect(ctx context.Context, options ConnectionOptions) (Client, error) {
 	builder := new_builder()
 
 	builder.

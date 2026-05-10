@@ -15,13 +15,13 @@ const (
 	ProtocolEvents = "aws-appsync-event-ws"
 )
 
-type AppsyncClient struct {
+type appsync_client struct {
 	transport connection.Connection
 	runtime   *engine.Engine
 	usecases  *composition.UseCases
 }
 
-func (client *AppsyncClient) Publish(ctx context.Context, input PublishCommandInput) error {
+func (client *appsync_client) Publish(ctx context.Context, input PublishCommandInput) error {
 	frame := &events.FrameBuilder{}
 
 	err := client.usecases.Publish.Publish(ctx, publish.PublishCommandInput{
@@ -32,7 +32,7 @@ func (client *AppsyncClient) Publish(ctx context.Context, input PublishCommandIn
 	return err
 }
 
-func (client *AppsyncClient) Subscribe(ctx context.Context, input SubscribeCommandInput) (*SubscribeCommandOutput, error) {
+func (client *appsync_client) Subscribe(ctx context.Context, input SubscribeCommandInput) (Subscription, error) {
 	frame := &events.FrameBuilder{}
 	result, err := client.usecases.Subscribe.Execute(ctx, subscribe.SubscribeCommandInput{
 		Channel: input.Channel,
@@ -41,16 +41,14 @@ func (client *AppsyncClient) Subscribe(ctx context.Context, input SubscribeComma
 	if err != nil {
 		return nil, err
 	}
-	return &SubscribeCommandOutput{
-		Sub: &ChannelSubscription{
-			id:           result.SubID,
-			subscription: result.Subscription,
-			unsubscribe:  client.usecases.Unsubscribe,
-		},
-	}, err
+	return &channel_subscription{
+		id:           result.SubID,
+		subscription: result.Subscription,
+		unsubscribe:  client.usecases.Unsubscribe,
+	}, nil
 }
 
-func (client *AppsyncClient) Close(ctx context.Context) error {
+func (client *appsync_client) Close(ctx context.Context) error {
 	client.runtime.Close(ctx)
 	return client.transport.Close()
 }

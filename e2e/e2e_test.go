@@ -106,7 +106,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 			channel := fmt.Sprintf("%s/test-%d", tc.namespace, time.Now().UnixNano())
 			payload := []byte(fmt.Sprintf(`{"authorizer":%q,"channel":%q}`, tc.name, channel))
 
-			output, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
+			sub, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
 				Channel: channel,
 			})
 			if err != nil {
@@ -117,7 +117,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 				close_ctx, close_cancel := context.WithTimeout(context.Background(), 5*time.Second)
 				defer close_cancel()
 
-				if err := output.Sub.Close(close_ctx); err != nil {
+				if err := sub.Close(close_ctx); err != nil {
 					t.Logf("subscription close: %v", err)
 				}
 			}()
@@ -129,7 +129,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 				t.Fatalf("publish: %v", err)
 			}
 
-			message, err := output.Sub.Next(ctx)
+			message, err := sub.Next(ctx)
 			if err != nil {
 				t.Fatalf("next message: %v", err)
 			}
