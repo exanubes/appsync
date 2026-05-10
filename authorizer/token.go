@@ -14,14 +14,18 @@ type token_authorizer struct {
 
 type TokenAuthorizerConfig struct {
 	AuthToken string
-	Endpoint  *url.URL
+	Endpoint  string
 }
 
-func Token(config TokenAuthorizerConfig) port.Authorizer {
+func Token(config TokenAuthorizerConfig) (port.Authorizer, error) {
+	endpoint, err := url.Parse(config.Endpoint)
+	if err != nil {
+		return nil, err
+	}
 	return &token_authorizer{
 		auth_token: config.AuthToken,
-		endpoint:   config.Endpoint,
-	}
+		endpoint:   endpoint,
+	}, nil
 }
 
 func (authorizer *token_authorizer) Authorize(ctx context.Context, input port.AuthorizeCommandInput) (*port.AuthorizeCommandOutput, error) {

@@ -14,12 +14,15 @@ type api_key_authorizer struct {
 
 type ApiKeyAuthorizerConfig struct {
 	ApiKey   string
-	Endpoint *url.URL
+	Endpoint string
 }
 
-func ApiKey(config ApiKeyAuthorizerConfig) port.Authorizer {
-	return &api_key_authorizer{endpoint: config.Endpoint, api_key: config.ApiKey}
-
+func ApiKey(config ApiKeyAuthorizerConfig) (port.Authorizer, error) {
+	endpoint, err := url.Parse(config.Endpoint)
+	if err != nil {
+		return nil, err
+	}
+	return &api_key_authorizer{endpoint: endpoint, api_key: config.ApiKey}, nil
 }
 
 func (authorizer *api_key_authorizer) Authorize(ctx context.Context, input port.AuthorizeCommandInput) (*port.AuthorizeCommandOutput, error) {

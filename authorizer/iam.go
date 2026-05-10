@@ -19,17 +19,21 @@ type iam_authorizer struct {
 
 type IAMAuthorizerConfig struct {
 	Region   string
-	Endpoint *url.URL
+	Endpoint string
 }
 
 // IAM authorization uses the AWS SDK default credential chain.
 // Temporary/session credentials (STS, SSO, AssumeRole, ECS/EC2 roles, Lambda roles, environment variables with AWS_SESSION_TOKEN, etc.) are supported automatically as long as they are resolvable by the AWS SDK.
 // Advanced/custom credential workflows can implement the Authorizer interface directly.
-func IAM(config IAMAuthorizerConfig) port.Authorizer {
+func IAM(config IAMAuthorizerConfig) (port.Authorizer, error) {
+	endpoint, err := url.Parse(config.Endpoint)
+	if err != nil {
+		return nil, err
+	}
 	credentials_provider := &internal.AwsCredentialsProvider{}
 	clock := clock.New()
 	signer := &internal.Sigv4Signer{Provider: credentials_provider, Region: config.Region, Clock: clock}
-	return new_iam_authorizer(config.Endpoint, signer, internal.CanonicalRequest{})
+	return new_iam_authorizer(endpoint, signer, internal.CanonicalRequest{}), nil
 }
 
 func new_iam_authorizer(endpoint *url.URL, signer internal.Signer, factory internal.RequestFactory) *iam_authorizer {

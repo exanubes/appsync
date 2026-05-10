@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -19,11 +18,11 @@ import (
 type auth_case struct {
 	name      string
 	namespace string
-	authz     func(*url.URL) port.Authorizer
+	authz     func(string) (port.Authorizer, error)
 }
 
 func TestAppSyncAuthorizers(t *testing.T) {
-	http_endpoint := must_parse_url(t, require_env(t, "APPSYNC_E2E_HTTP_ENDPOINT"))
+	http_endpoint := require_env(t, "APPSYNC_E2E_HTTP_ENDPOINT")
 	ws_endpoint := require_env(t, "APPSYNC_E2E_WS_ENDPOINT")
 	aws_region := require_env(t, "AWS_REGION")
 
@@ -31,7 +30,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		{
 			name:      "api_key",
 			namespace: "api-key-e2e",
-			authz: func(endpoint *url.URL) port.Authorizer {
+			authz: func(endpoint string) (port.Authorizer, error) {
 				return authorizer.ApiKey(authorizer.ApiKeyAuthorizerConfig{
 					ApiKey:   require_env(t, "APPSYNC_E2E_API_KEY"),
 					Endpoint: endpoint,
@@ -41,7 +40,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		{
 			name:      "iam",
 			namespace: "iam-e2e",
-			authz: func(endpoint *url.URL) port.Authorizer {
+			authz: func(endpoint string) (port.Authorizer, error) {
 				return authorizer.IAM(authorizer.IAMAuthorizerConfig{
 					Region:   aws_region,
 					Endpoint: endpoint,
@@ -51,7 +50,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		{
 			name:      "lambda",
 			namespace: "lambda-e2e",
-			authz: func(endpoint *url.URL) port.Authorizer {
+			authz: func(endpoint string) (port.Authorizer, error) {
 				return authorizer.Token(authorizer.TokenAuthorizerConfig{
 					AuthToken: require_env(t, "APPSYNC_E2E_LAMBDA_TOKEN"),
 					Endpoint:  endpoint,
@@ -61,7 +60,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		{
 			name:      "cognito",
 			namespace: "cognito-e2e",
-			authz: func(endpoint *url.URL) port.Authorizer {
+			authz: func(endpoint string) (port.Authorizer, error) {
 				return authorizer.Token(authorizer.TokenAuthorizerConfig{
 					AuthToken: require_env(t, "APPSYNC_E2E_COGNITO_ID_TOKEN"),
 					Endpoint:  endpoint,
@@ -71,7 +70,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		{
 			name:      "oidc",
 			namespace: "oidc-e2e",
-			authz: func(endpoint *url.URL) port.Authorizer {
+			authz: func(endpoint string) (port.Authorizer, error) {
 				return authorizer.Token(authorizer.TokenAuthorizerConfig{
 					AuthToken: require_env(t, "APPSYNC_E2E_OIDC_TOKEN"),
 					Endpoint:  endpoint,
@@ -85,10 +84,15 @@ func TestAppSyncAuthorizers(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 			defer cancel()
 
+			authz, err := tc.authz(http_endpoint)
+			if err != nil {
+				t.Fatalf("create authorizer: %v", err)
+			}
+
 			client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 				Endpoint:     ws_endpoint,
 				Subprotocols: []string{appsync.ProtocolEvents},
-				Authorizer:   tc.authz(http_endpoint),
+				Authorizer:   authz,
 			})
 			if err != nil {
 				t.Fatalf("connect: %v", err)
@@ -142,19 +146,24 @@ func TestAppSyncAuthorizers(t *testing.T) {
 }
 
 func TestInvalidApiKeyCannotConnect(t *testing.T) {
-	http_endpoint := must_parse_url(t, require_env(t, "APPSYNC_E2E_HTTP_ENDPOINT"))
+	http_endpoint := require_env(t, "APPSYNC_E2E_HTTP_ENDPOINT")
 	ws_endpoint := require_env(t, "APPSYNC_E2E_WS_ENDPOINT")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := appsync.Connect(ctx, appsync.ConnectionOptions{
+	authz, err := authorizer.ApiKey(authorizer.ApiKeyAuthorizerConfig{
+		ApiKey:   "invalid-api-key",
+		Endpoint: http_endpoint,
+	})
+	if err != nil {
+		t.Fatalf("create authorizer: %v", err)
+	}
+
+	_, err = appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     ws_endpoint,
 		Subprotocols: []string{appsync.ProtocolEvents},
-		Authorizer: authorizer.ApiKey(authorizer.ApiKeyAuthorizerConfig{
-			ApiKey:   "invalid-api-key",
-			Endpoint: http_endpoint,
-		}),
+		Authorizer:   authz,
 	})
 
 	if err == nil {
@@ -171,15 +180,4 @@ func require_env(t *testing.T, key string) string {
 	}
 
 	return value
-}
-
-func must_parse_url(t *testing.T, raw string) *url.URL {
-	t.Helper()
-
-	parsed, err := url.Parse(raw)
-	if err != nil {
-		t.Fatalf("parse url %q: %v", raw, err)
-	}
-
-	return parsed
 }
