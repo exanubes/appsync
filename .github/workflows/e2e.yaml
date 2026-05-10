@@ -55,9 +55,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_E2E_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
-
       - name: Terraform init
         working-directory: ${{ env.TERRAFORM_E2E_DIR }}
         run: terraform init -input=false
@@ -80,14 +77,21 @@ jobs:
         run: |
           echo "APPSYNC_E2E_HTTP_ENDPOINT=$(terraform output -raw appsync_http_endpoint)" >> "$GITHUB_ENV"
           echo "APPSYNC_E2E_WS_ENDPOINT=$(terraform output -raw appsync_ws_endpoint)" >> "$GITHUB_ENV"
-          echo "APPSYNC_E2E_API_KEY=$(terraform output -raw appsync_api_key)" >> "$GITHUB_ENV"
+
+          api_key="$(terraform output -raw appsync_api_key)"
+          echo "::add-mask::$api_key"
+          echo "APPSYNC_E2E_API_KEY=$api_key" >> "$GITHUB_ENV"
 
           echo "USER_POOL_ID=$(terraform output -raw user_pool_id)" >> "$GITHUB_ENV"
           echo "COGNITO_USER_POOL_CLIENT_ID=$(terraform output -raw cognito_user_pool_client_id)" >> "$GITHUB_ENV"
 
           echo "COGNITO_DOMAIN=$(terraform output -raw cognito_domain)" >> "$GITHUB_ENV"
           echo "OIDC_USER_POOL_CLIENT_ID=$(terraform output -raw oidc_user_pool_client_id)" >> "$GITHUB_ENV"
-          echo "OIDC_USER_POOL_CLIENT_SECRET=$(terraform output -raw oidc_user_pool_client_secret)" >> "$GITHUB_ENV"
+
+          oidc_secret="$(terraform output -raw oidc_user_pool_client_secret)"
+          echo "::add-mask::$oidc_secret"
+          echo "OIDC_USER_POOL_CLIENT_SECRET=$oidc_secret" >> "$GITHUB_ENV"
+
           echo "OIDC_SCOPE=$(terraform output -raw oidc_scope)" >> "$GITHUB_ENV"
 
       - name: Create Cognito user and export ID token
