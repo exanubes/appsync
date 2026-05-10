@@ -11,7 +11,7 @@ import (
 
 	"github.com/exanubes/appsync"
 	"github.com/exanubes/appsync/authorizer"
-	"github.com/exanubes/appsync/internal/infrastructure/logger"
+	"github.com/exanubes/appsync/logger"
 )
 
 var http_endpoint = os.Getenv("HTTP_ENDPOINT")

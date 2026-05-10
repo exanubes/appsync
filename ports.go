@@ -3,7 +3,7 @@ package appsync
 import (
 	"context"
 
-	"github.com/exanubes/appsync/internal/app"
+	"github.com/exanubes/appsync/logger"
 	"github.com/exanubes/appsync/port"
 )
 
@@ -11,7 +11,7 @@ type ConnectionOptions struct {
 	Endpoint     string
 	Subprotocols []string
 	Authorizer   port.Authorizer
-	Logger       app.Logger
+	Logger       logger.Logger
 	Backpressure Backpressure
 }
 

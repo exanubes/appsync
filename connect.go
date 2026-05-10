@@ -167,9 +167,12 @@ func Connect(ctx context.Context, options ConnectionOptions) (*AppsyncClient, er
 	builder.
 		WithAuthorizer(options.Authorizer).
 		WithEndpoint(options.Endpoint).
-		WithLogger(options.Logger).
 		WithSubprotocol(options.Subprotocols...).
 		WithBackpressure(options.Backpressure)
+
+	if options.Logger != nil {
+		builder.WithLogger(logger.NewInternalLoggerAdapter(options.Logger))
+	}
 
 	return builder.Connect(ctx)
 }
