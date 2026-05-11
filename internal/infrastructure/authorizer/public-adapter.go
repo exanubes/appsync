@@ -3,22 +3,22 @@ package authorizer
 import (
 	"context"
 
+	pub "github.com/exanubes/appsync/authorizer"
 	"github.com/exanubes/appsync/internal/app"
-	"github.com/exanubes/appsync/port"
 )
 
 type InternalAuthorizerAdapter struct {
-	public port.Authorizer
+	public pub.Authorizer
 }
 
-func NewInternalAdapter(public port.Authorizer) *InternalAuthorizerAdapter {
+func NewInternalAdapter(public pub.Authorizer) *InternalAuthorizerAdapter {
 	return &InternalAuthorizerAdapter{
 		public: public,
 	}
 }
 
 func (authorizer *InternalAuthorizerAdapter) Authorize(ctx context.Context, input app.AuthorizeCommandInput) (app.Signature, error) {
-	output, err := authorizer.public.Authorize(ctx, port.AuthorizeCommandInput{
+	output, err := authorizer.public.Authorize(ctx, pub.AuthorizeCommandInput{
 		Channel: input.Channel,
 		Payload: input.Payload,
 	})

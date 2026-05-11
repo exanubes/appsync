@@ -7,7 +7,6 @@ import (
 
 	"github.com/exanubes/appsync/authorizer/internal"
 	"github.com/exanubes/appsync/internal/infrastructure/clock"
-	"github.com/exanubes/appsync/port"
 )
 
 type iam_authorizer struct {
@@ -25,7 +24,7 @@ type IAMAuthorizerConfig struct {
 // IAM authorization uses the AWS SDK default credential chain.
 // Temporary/session credentials (STS, SSO, AssumeRole, ECS/EC2 roles, Lambda roles, environment variables with AWS_SESSION_TOKEN, etc.) are supported automatically as long as they are resolvable by the AWS SDK.
 // Advanced/custom credential workflows can implement the Authorizer interface directly.
-func IAM(config IAMAuthorizerConfig) (port.Authorizer, error) {
+func IAM(config IAMAuthorizerConfig) (Authorizer, error) {
 	endpoint, err := url.Parse(config.Endpoint)
 	if err != nil {
 		return nil, err
@@ -43,7 +42,7 @@ func new_iam_authorizer(endpoint *url.URL, signer internal.Signer, factory inter
 		endpoint: endpoint,
 	}
 }
-func (authorizer *iam_authorizer) Authorize(ctx context.Context, input port.AuthorizeCommandInput) (*port.AuthorizeCommandOutput, error) {
+func (authorizer *iam_authorizer) Authorize(ctx context.Context, input AuthorizeCommandInput) (*AuthorizeCommandOutput, error) {
 	canonical := internal.CanonicalPayload{
 		Channel: input.Channel,
 	}
@@ -70,7 +69,7 @@ func (authorizer *iam_authorizer) Authorize(ctx context.Context, input port.Auth
 		return nil, err
 	}
 
-	return &port.AuthorizeCommandOutput{
+	return &AuthorizeCommandOutput{
 		Signature: signature,
 	}, nil
 }

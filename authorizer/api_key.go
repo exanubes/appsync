@@ -3,8 +3,6 @@ package authorizer
 import (
 	"context"
 	"net/url"
-
-	"github.com/exanubes/appsync/port"
 )
 
 type api_key_authorizer struct {
@@ -17,7 +15,7 @@ type ApiKeyAuthorizerConfig struct {
 	Endpoint string
 }
 
-func ApiKey(config ApiKeyAuthorizerConfig) (port.Authorizer, error) {
+func ApiKey(config ApiKeyAuthorizerConfig) (Authorizer, error) {
 	endpoint, err := url.Parse(config.Endpoint)
 	if err != nil {
 		return nil, err
@@ -25,8 +23,8 @@ func ApiKey(config ApiKeyAuthorizerConfig) (port.Authorizer, error) {
 	return &api_key_authorizer{endpoint: endpoint, api_key: config.ApiKey}, nil
 }
 
-func (authorizer *api_key_authorizer) Authorize(ctx context.Context, input port.AuthorizeCommandInput) (*port.AuthorizeCommandOutput, error) {
-	return &port.AuthorizeCommandOutput{
+func (authorizer *api_key_authorizer) Authorize(ctx context.Context, input AuthorizeCommandInput) (*AuthorizeCommandOutput, error) {
+	return &AuthorizeCommandOutput{
 		Signature: map[string]string{
 			"host":      authorizer.endpoint.Host,
 			"x-api-key": authorizer.api_key,

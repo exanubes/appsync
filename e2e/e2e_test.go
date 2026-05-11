@@ -12,13 +12,12 @@ import (
 
 	"github.com/exanubes/appsync"
 	"github.com/exanubes/appsync/authorizer"
-	"github.com/exanubes/appsync/port"
 )
 
 type auth_case struct {
 	name      string
 	namespace string
-	authz     func(string) (port.Authorizer, error)
+	authz     func(string) (authorizer.Authorizer, error)
 }
 
 func TestAppSyncAuthorizers(t *testing.T) {
@@ -30,7 +29,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		{
 			name:      "api_key",
 			namespace: "api-key-e2e",
-			authz: func(endpoint string) (port.Authorizer, error) {
+			authz: func(endpoint string) (authorizer.Authorizer, error) {
 				return authorizer.ApiKey(authorizer.ApiKeyAuthorizerConfig{
 					ApiKey:   require_env(t, "APPSYNC_E2E_API_KEY"),
 					Endpoint: endpoint,
@@ -40,7 +39,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		{
 			name:      "iam",
 			namespace: "iam-e2e",
-			authz: func(endpoint string) (port.Authorizer, error) {
+			authz: func(endpoint string) (authorizer.Authorizer, error) {
 				return authorizer.IAM(authorizer.IAMAuthorizerConfig{
 					Region:   aws_region,
 					Endpoint: endpoint,
@@ -50,7 +49,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		{
 			name:      "lambda",
 			namespace: "lambda-e2e",
-			authz: func(endpoint string) (port.Authorizer, error) {
+			authz: func(endpoint string) (authorizer.Authorizer, error) {
 				return authorizer.Token(authorizer.TokenAuthorizerConfig{
 					AuthToken: require_env(t, "APPSYNC_E2E_LAMBDA_TOKEN"),
 					Endpoint:  endpoint,
@@ -60,7 +59,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		{
 			name:      "cognito",
 			namespace: "cognito-e2e",
-			authz: func(endpoint string) (port.Authorizer, error) {
+			authz: func(endpoint string) (authorizer.Authorizer, error) {
 				return authorizer.Token(authorizer.TokenAuthorizerConfig{
 					AuthToken: require_env(t, "APPSYNC_E2E_COGNITO_ID_TOKEN"),
 					Endpoint:  endpoint,
@@ -70,7 +69,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		{
 			name:      "oidc",
 			namespace: "oidc-e2e",
-			authz: func(endpoint string) (port.Authorizer, error) {
+			authz: func(endpoint string) (authorizer.Authorizer, error) {
 				return authorizer.Token(authorizer.TokenAuthorizerConfig{
 					AuthToken: require_env(t, "APPSYNC_E2E_OIDC_TOKEN"),
 					Endpoint:  endpoint,

@@ -15,19 +15,19 @@ import (
 	"github.com/exanubes/appsync/internal/app/services/connection"
 	"github.com/exanubes/appsync/internal/app/services/io"
 	"github.com/exanubes/appsync/internal/composition"
-	"github.com/exanubes/appsync/internal/infrastructure/authorizer"
+	"github.com/exanubes/appsync/authorizer"
+	infra_authorizer "github.com/exanubes/appsync/internal/infrastructure/authorizer"
 	"github.com/exanubes/appsync/internal/infrastructure/clock"
 	"github.com/exanubes/appsync/internal/infrastructure/codec"
 	"github.com/exanubes/appsync/internal/infrastructure/logger"
 	"github.com/exanubes/appsync/internal/infrastructure/serializer"
 	"github.com/exanubes/appsync/internal/infrastructure/transport"
-	"github.com/exanubes/appsync/port"
 )
 
 type builder struct {
 	errors       []error
 	endpoint     *url.URL
-	authorizer   port.Authorizer
+	authorizer   authorizer.Authorizer
 	subprotocols []string
 	logger       app.Logger
 	backpressure Backpressure
@@ -62,7 +62,7 @@ func (builder *builder) WithEndpoint(endpoint string) *builder {
 
 // Sets authorizer
 // Options: IAM, Lambda, Open ID Connect, Cognito User Pool, API Key
-func (builder *builder) WithAuthorizer(authz port.Authorizer) *builder {
+func (builder *builder) WithAuthorizer(authz authorizer.Authorizer) *builder {
 	if authz == nil {
 		builder.errors = append(builder.errors, errors.New("Authorizer can't be nil"))
 		return builder
@@ -118,7 +118,7 @@ func (builder *builder) Connect(ctx context.Context) (*appsync_client, error) {
 	dialer := transport.New()
 	msg_codec := codec.New()
 	base64_serializer := serializer.New()
-	request_authorizer := authorizer.NewInternalAdapter(builder.authorizer)
+	request_authorizer := infra_authorizer.NewInternalAdapter(builder.authorizer)
 	generate_subprotocol_service := connection.NewGenerateSubprotocolService(request_authorizer, base64_serializer)
 	authorize_connection_service := connection.NewAuthorizeConnectionService(msg_codec, request_authorizer, builder.logger)
 	create_connection_service := connection.NewConnectionService(dialer, authorize_connection_service, generate_subprotocol_service, builder.logger)

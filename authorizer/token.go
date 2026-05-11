@@ -3,8 +3,6 @@ package authorizer
 import (
 	"context"
 	"net/url"
-
-	"github.com/exanubes/appsync/port"
 )
 
 type token_authorizer struct {
@@ -17,7 +15,7 @@ type TokenAuthorizerConfig struct {
 	Endpoint  string
 }
 
-func Token(config TokenAuthorizerConfig) (port.Authorizer, error) {
+func Token(config TokenAuthorizerConfig) (Authorizer, error) {
 	endpoint, err := url.Parse(config.Endpoint)
 	if err != nil {
 		return nil, err
@@ -28,8 +26,8 @@ func Token(config TokenAuthorizerConfig) (port.Authorizer, error) {
 	}, nil
 }
 
-func (authorizer *token_authorizer) Authorize(ctx context.Context, input port.AuthorizeCommandInput) (*port.AuthorizeCommandOutput, error) {
-	return &port.AuthorizeCommandOutput{
+func (authorizer *token_authorizer) Authorize(ctx context.Context, input AuthorizeCommandInput) (*AuthorizeCommandOutput, error) {
+	return &AuthorizeCommandOutput{
 		Signature: map[string]string{
 			"Authorization": authorizer.auth_token,
 			"host":          authorizer.endpoint.Host,

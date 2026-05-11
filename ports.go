@@ -3,13 +3,13 @@ package appsync
 import (
 	"context"
 
-	"github.com/exanubes/appsync/port"
+	"github.com/exanubes/appsync/authorizer"
 )
 
 type ConnectionOptions struct {
 	Endpoint     string
 	Subprotocols []string
-	Authorizer   port.Authorizer
+	Authorizer   authorizer.Authorizer
 	Backpressure Backpressure
 }
 
