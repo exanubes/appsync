@@ -10,7 +10,6 @@ import (
 
 	"github.com/exanubes/appsync"
 	"github.com/exanubes/appsync/authorizer"
-	"github.com/exanubes/appsync/logger"
 )
 
 var http_endpoint = os.Getenv("HTTP_ENDPOINT")
@@ -39,12 +38,10 @@ func main() {
 	// authz, err := authorizer.Token(authorizer.TokenAuthorizerConfig{AuthToken: "custom-token", Endpoint: http_endpoint})
 	// authz, err := authorizer.Token(authorizer.TokenAuthorizerConfig{AuthToken: cognito_auth_token, Endpoint: http_endpoint})
 	// authz, err := authorizer.Token(authorizer.TokenAuthorizerConfig{AuthToken: oidc_auth_token, Endpoint: http_endpoint})
-	dbgLogger := logger.New()
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     ws_endpoint,
 		Subprotocols: []string{appsync.ProtocolEvents},
 		Authorizer:   authz,
-		Logger:       dbgLogger,
 	})
 
 	if err != nil {

@@ -3,7 +3,6 @@ package appsync
 import (
 	"context"
 
-	"github.com/exanubes/appsync/logger"
 	"github.com/exanubes/appsync/port"
 )
 
@@ -11,14 +10,15 @@ type ConnectionOptions struct {
 	Endpoint     string
 	Subprotocols []string
 	Authorizer   port.Authorizer
-	Logger       logger.Logger
 	Backpressure Backpressure
 }
 
-// Buffer sizes directly impact memory consumption.
-// Large buffer configurations combined with high subscription counts or large payloads may result in substantial memory usage.
-// Tune buffer sizes according to your workload characteristics and available system resources.
-// Buffer limits are enforced per connection/subscription. The library does not impose a global memory limit or adaptive backpressure mechanism.
+// Backpressure controls the internal channel buffer sizes.
+// Zero values are treated as "use the library default" (100 for each field) — setting a field
+// to 0 does not produce an unbuffered channel; omit the field entirely to accept the default.
+// Buffer sizes directly impact memory consumption: large values combined with many subscriptions
+// or large payloads may result in substantial memory usage. Tune according to your workload.
+// Limits are enforced per connection/subscription; no global memory cap is applied.
 type Backpressure struct {
 	ConnectionInbound  uint
 	ConnectionOutbound uint

@@ -2,6 +2,7 @@ package appsync
 
 import (
 	"context"
+	"errors"
 
 	"github.com/exanubes/appsync/internal/app/engine"
 	"github.com/exanubes/appsync/internal/app/services/connection"
@@ -49,6 +50,5 @@ func (client *appsync_client) Subscribe(ctx context.Context, input SubscribeComm
 }
 
 func (client *appsync_client) Close(ctx context.Context) error {
-	client.runtime.Close(ctx)
-	return client.transport.Close()
+	return errors.Join(client.runtime.Close(ctx), client.transport.Close())
 }

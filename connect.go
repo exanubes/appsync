@@ -3,7 +3,6 @@ package appsync
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/url"
 
 	"github.com/exanubes/appsync/internal/app"
@@ -109,7 +108,7 @@ func (builder *builder) WithBackpressure(config Backpressure) *builder {
 // Validates inputs and creates a websocket connection
 func (builder *builder) Connect(ctx context.Context) (*appsync_client, error) {
 	if len(builder.errors) != 0 {
-		return nil, fmt.Errorf("Invalid configuration, could not create connection: %+v", builder.errors)
+		return nil, errors.Join(builder.errors...)
 	}
 
 	if builder.authorizer == nil {
@@ -169,10 +168,6 @@ func Connect(ctx context.Context, options ConnectionOptions) (Client, error) {
 		WithEndpoint(options.Endpoint).
 		WithSubprotocol(options.Subprotocols...).
 		WithBackpressure(options.Backpressure)
-
-	if options.Logger != nil {
-		builder.WithLogger(logger.NewInternalLoggerAdapter(options.Logger))
-	}
 
 	return builder.Connect(ctx)
 }
