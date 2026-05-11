@@ -1,7 +1,10 @@
 package subscription
 
+import "sync"
+
 type Registry struct {
 	store map[string]*Subscription
+	mutex sync.RWMutex
 }
 
 func NewRegistry() *Registry {
@@ -11,14 +14,23 @@ func NewRegistry() *Registry {
 }
 
 func (registry *Registry) Register(sub *Subscription) {
+	registry.mutex.Lock()
+	defer registry.mutex.Unlock()
+
 	registry.store[sub.id] = sub
 }
 
 func (registry *Registry) Remove(id string) {
+	registry.mutex.Lock()
+	defer registry.mutex.Unlock()
+
 	delete(registry.store, id)
 }
 
 func (registry *Registry) Get(id string) *Subscription {
+	registry.mutex.RLock()
+	defer registry.mutex.RUnlock()
+
 	sub, ok := registry.store[id]
 	if ok {
 		return sub

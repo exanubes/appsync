@@ -19,6 +19,7 @@ type Subscription struct {
 	done    chan struct{}
 	once    sync.Once
 	active  bool
+	mutex   sync.RWMutex
 }
 
 func New(sub_id string, channel string, buffer_size uint) (*Subscription, error) {
@@ -62,10 +63,15 @@ func (subscription *Subscription) Decode(ctx context.Context, value any) error {
 func (subscription *Subscription) Close() {
 	subscription.once.Do(func() {
 		close(subscription.done)
+		subscription.mutex.Lock()
 		subscription.active = false
+		subscription.mutex.Unlock()
 	})
 }
 
 func (subscription *Subscription) Active() bool {
+	subscription.mutex.RLock()
+	defer subscription.mutex.RUnlock()
+
 	return subscription.active
 }
