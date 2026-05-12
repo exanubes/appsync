@@ -38,3 +38,18 @@ func (registry *Registry) Get(id string) *Subscription {
 
 	return nil
 }
+
+func (registry *Registry) Active() []string {
+	registry.mutex.RLock()
+	defer registry.mutex.RUnlock()
+
+	ids := []string{}
+
+	for id, sub := range registry.store {
+		if sub.Active() {
+			ids = append(ids, id)
+		}
+	}
+
+	return ids
+}

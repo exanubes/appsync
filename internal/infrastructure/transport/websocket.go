@@ -48,6 +48,6 @@ func (conn *Connection) Read(ctx context.Context) ([]byte, error) {
 func (conn *Connection) Write(ctx context.Context, data []byte) error {
 	return conn.ws.Write(ctx, websocket.MessageText, data)
 }
-func (conn *Connection) Close() error {
+func (conn *Connection) Close(ctx context.Context) error {
 	return conn.ws.Close(websocket.StatusNormalClosure, websocket.StatusNormalClosure.String())
 }

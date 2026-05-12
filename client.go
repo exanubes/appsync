@@ -2,10 +2,7 @@ package appsync
 
 import (
 	"context"
-	"errors"
 
-	"github.com/exanubes/appsync/internal/app/engine"
-	"github.com/exanubes/appsync/internal/app/services/connection"
 	"github.com/exanubes/appsync/internal/app/usecases/publish"
 	"github.com/exanubes/appsync/internal/app/usecases/subscribe"
 	"github.com/exanubes/appsync/internal/composition"
@@ -17,9 +14,7 @@ const (
 )
 
 type appsync_client struct {
-	transport connection.Connection
-	runtime   *engine.Engine
-	usecases  *composition.UseCases
+	usecases *composition.UseCases
 }
 
 func (client *appsync_client) Publish(ctx context.Context, input PublishCommandInput) error {
@@ -50,5 +45,5 @@ func (client *appsync_client) Subscribe(ctx context.Context, input SubscribeComm
 }
 
 func (client *appsync_client) Close(ctx context.Context) error {
-	return errors.Join(client.runtime.Close(ctx), client.transport.Close())
+	return client.usecases.Shutdown.Execute(ctx)
 }

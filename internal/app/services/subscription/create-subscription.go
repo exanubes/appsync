@@ -5,11 +5,11 @@ import (
 )
 
 type CreateSubscriptionService struct {
-	registry     Registry
+	registry     SubscribeRegistry
 	backpressure uint
 }
 
-func NewCreateSubscriptionService(registry Registry, backpressure uint) *CreateSubscriptionService {
+func NewCreateSubscriptionService(registry SubscribeRegistry, backpressure uint) *CreateSubscriptionService {
 	return &CreateSubscriptionService{
 		registry:     registry,
 		backpressure: backpressure,

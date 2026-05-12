@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/url"
 
+	"github.com/exanubes/appsync/authorizer"
 	"github.com/exanubes/appsync/internal/app"
 	"github.com/exanubes/appsync/internal/app/engine"
 	"github.com/exanubes/appsync/internal/app/heartbeat"
@@ -14,8 +15,8 @@ import (
 	"github.com/exanubes/appsync/internal/app/runtime"
 	"github.com/exanubes/appsync/internal/app/services/connection"
 	"github.com/exanubes/appsync/internal/app/services/io"
+	"github.com/exanubes/appsync/internal/app/usecases/shutdown"
 	"github.com/exanubes/appsync/internal/composition"
-	"github.com/exanubes/appsync/authorizer"
 	infra_authorizer "github.com/exanubes/appsync/internal/infrastructure/authorizer"
 	"github.com/exanubes/appsync/internal/infrastructure/clock"
 	"github.com/exanubes/appsync/internal/infrastructure/codec"
@@ -138,13 +139,14 @@ func (builder *builder) Connect(ctx context.Context) (*appsync_client, error) {
 	egress_queue := queue.NewEgressQueue(builder.backpressure.ConnectionOutbound)
 	pending_registry := pending.NewRegistry()
 	io_loops := io.New(ingress_queue, egress_queue, connection_output.Connection, msg_codec)
-	usecases := composition.NewUseCases(
+	usecases, services := composition.NewUseCases(
 		request_authorizer,
 		ingress_queue,
 		egress_queue,
 		pending_registry,
 		builder.backpressure.SubscriptionEvents,
 	)
+
 	msg_router := router.New(pending_registry, usecases.ReceiveData)
 	runtime := runtime.New(ingress_queue, msg_router, heartbeat)
 	session := engine.New(heartbeat, runtime, io_loops, builder.logger)
@@ -152,10 +154,17 @@ func (builder *builder) Connect(ctx context.Context) (*appsync_client, error) {
 		Timeout: connection_output.Timeout,
 	})
 
+	shutdown_connection_usecase := shutdown.NewShutdownConnectionUsecase(
+		services.SubscriptionsRegistry,
+		services.RemoveSubscriptions,
+		session,
+		connection_output.Connection,
+	)
+
+	usecases.Shutdown = shutdown_connection_usecase
+
 	return &appsync_client{
-		transport: connection_output.Connection,
-		runtime:   session,
-		usecases:  usecases,
+		usecases: usecases,
 	}, nil
 }
 

@@ -13,6 +13,12 @@ func (FrameBuilderFactory) Create() app.FrameBuilder {
 	return &FrameBuilder{}
 }
 
+func (FrameBuilderFactory) Unsubscribe() app.FrameBuilder {
+	return &FrameBuilder{
+		_type: "unsubscribe",
+	}
+}
+
 type FrameBuilder struct {
 	id        string
 	_type     string

@@ -50,9 +50,17 @@ type Writer interface {
 }
 
 type Closer interface {
-	Close() error
+	Close(context.Context) error
 }
 
 type Serializer interface {
 	Serialize(app.Signature) (string, error)
+}
+
+type Runtime interface {
+	Close(context.Context) error
+}
+
+type Transport interface {
+	Close(context.Context) error
 }

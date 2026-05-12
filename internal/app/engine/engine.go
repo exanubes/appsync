@@ -3,7 +3,6 @@ package engine
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 
 	"github.com/exanubes/appsync/internal/app"
@@ -78,7 +77,7 @@ func (engine *Engine) Close(ctx context.Context) error {
 
 		case err := <-engine.err_channel:
 			if err != nil && !errors.Is(err, context.Canceled) {
-				error = fmt.Errorf("%w\n%w", error, err)
+				error = errors.Join(err)
 			}
 		default:
 		}
