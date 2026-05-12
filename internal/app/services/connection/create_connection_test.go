@@ -51,7 +51,7 @@ type mock_connection struct{}
 
 func (m *mock_connection) Read(_ context.Context) ([]byte, error) { return nil, nil }
 func (m *mock_connection) Write(_ context.Context, _ []byte) error { return nil }
-func (m *mock_connection) Close() error                           { return nil }
+func (m *mock_connection) Close(_ context.Context) error          { return nil }
 
 func TestConnect(t *testing.T) {
 	gen_err := errors.New("generate failed")

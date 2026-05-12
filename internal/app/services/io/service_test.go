@@ -52,7 +52,7 @@ func (m *mock_connection) Read(_ context.Context) ([]byte, error) {
 	return data, nil
 }
 
-func (m *mock_connection) Close() error { return nil }
+func (m *mock_connection) Close(_ context.Context) error { return nil }
 
 type mock_decoder struct {
 	messages []app.Message

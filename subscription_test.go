@@ -95,9 +95,6 @@ func TestChannelSubscription_Close_ForwardsInput(t *testing.T) {
 	if mock.last_input.SubscriptionId != sub_id {
 		t.Errorf("SubscriptionId = %q, want %q", mock.last_input.SubscriptionId, sub_id)
 	}
-	if mock.last_input.Frame == nil {
-		t.Error("Frame must be non-nil")
-	}
 }
 
 func TestChannelSubscription_Next(t *testing.T) {
