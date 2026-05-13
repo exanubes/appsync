@@ -41,7 +41,7 @@ jobs:
       - name: Build authorizer
         run: |
           mkdir -p dist/authorizer
-          GOOS=linux GOARCH=arm64 go build -o dist/authorizer/bootstrap ./cmd/authorizer/
+          GOOS=linux GOARCH=arm64 go build -o dist/authorizer/bootstrap ./internal/cmd/authorizer/
           cd dist/authorizer && zip -j function.zip bootstrap
 
       - name: Set up Terraform

@@ -23,11 +23,11 @@ dev:
 	AWS_REGION=$(AWS_REGION) \
 	ID_TOKEN=$(ID_TOKEN) \
 	OIDC_TOKEN=$(OIDC_TOKEN) \
-	go run ./cmd/dev/
+	go run ./internal/cmd/dev/
 
 build-authorizer:
 	mkdir -p dist/authorizer
-	GOOS=linux GOARCH=arm64 go build -o dist/authorizer/bootstrap ./cmd/authorizer/
+	GOOS=linux GOARCH=arm64 go build -o dist/authorizer/bootstrap ./internal/cmd/authorizer/
 	cd dist/authorizer && zip -j function.zip bootstrap
 
 create-user:
