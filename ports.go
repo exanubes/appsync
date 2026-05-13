@@ -6,6 +6,7 @@ import (
 	"github.com/exanubes/appsync/authorizer"
 )
 
+// ConnectionOptions configures a WebSocket connection to an Appsync Events API.
 type ConnectionOptions struct {
 	Endpoint     string
 	Subprotocols []string
@@ -40,7 +41,7 @@ type NextMessageOutput struct {
 
 // Client is the client-facing API for interacting with an AppSync WebSocket connection.
 type Client interface {
-	// Send a publish message via websocket connection to a particular channel
+	// Publish sends a message to a channel
 	Publish(context.Context, PublishCommandInput) error
 	// Subscribe to a channel and receive messages published to it
 	Subscribe(context.Context, SubscribeCommandInput) (Subscription, error)

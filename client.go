@@ -9,9 +9,8 @@ import (
 	"github.com/exanubes/appsync/internal/infrastructure/events"
 )
 
-const (
-	ProtocolEvents = "aws-appsync-event-ws"
-)
+// ProtocolEvents is the Appsync Events Websocket subprotocol
+const ProtocolEvents = "aws-appsync-event-ws"
 
 type appsync_client struct {
 	usecases *composition.UseCases
