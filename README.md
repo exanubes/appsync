@@ -25,6 +25,7 @@ and authorizing requests with API key, IAM, Lambda authorizer, Cognito User Pool
 - [Custom authorizers](#custom-authorizers)
 - [Backpressure configuration](#backpressure-configuration)
 - [Public errors](#public-errors)
+- [Examples](#examples)
 - [Limitations](#limitations)
 - [Tips](#tips)
 - [License](#license)
@@ -468,6 +469,15 @@ Relevant behavior:
 - `ErrSubscriptionInboxFull` means the subscriber did not consume events fast enough for its configured buffer.
 - Context cancellation and deadlines are propagated from public methods where applicable.
 
+## Examples
+
+Runnable examples are available in:
+
+- [`examples/api-key`](examples/api-key)
+- [`examples/iam`](examples/iam)
+- [`examples/token`](examples/token)
+- [`examples/custom-authorizer`](examples/custom-authorizer)
+
 ## Limitations
 
 A `Client` uses one authorizer for the entire connection lifecycle.
@@ -502,6 +512,7 @@ when your event contract is JSON.
 A custom authorizer may be called for every connect, subscribe, publish, and unsubscribe operation. Avoid expensive 
 work where possible, cache stable data safely, and refresh credentials/tokens deliberately when your auth model 
 requires it.
+
 
 ## License
 
