@@ -1,34 +1,61 @@
-output "HTTP_ENDPOINT" {
-  value = format("%s://%s/%s", "https", aws_appsync_api.dev.dns.HTTP, "event")
+output "namespace_api_key" {
+  value = aws_appsync_channel_namespace.api_key.name
 }
 
-output "WS_ENDPOINT" {
-  value = format("%s://%s/%s", "wss", aws_appsync_api.dev.dns.REALTIME, "event/realtime")
+output "namespace_iam" {
+  value = aws_appsync_channel_namespace.iam.name
 }
 
-output "CHANNEL" {
-  value = aws_appsync_channel_namespace.dev.name
+output "namespace_lambda" {
+  value = aws_appsync_channel_namespace.lambda.name
 }
 
-output "APPSYNC_API_KEY" {
-  value     = aws_appsync_api_key.dev.key
+output "namespace_cognito" {
+  value = aws_appsync_channel_namespace.cognito.name
+}
+
+output "namespace_oidc" {
+  value = aws_appsync_channel_namespace.oidc.name
+}
+
+output "user_pool_id" {
+  value = aws_cognito_user_pool.e2e.id
+}
+
+output "cognito_user_pool_client_id" {
+  value = aws_cognito_user_pool_client.cognito_auth.id
+}
+
+output "cognito_domain" {
+  value = "https://${aws_cognito_user_pool_domain.e2e.domain}.auth.${var.aws_region}.amazoncognito.com"
+}
+
+output "oidc_user_pool_client_id" {
+  value = aws_cognito_user_pool_client.oidc_auth.id
+}
+
+output "oidc_user_pool_client_secret" {
+  value     = aws_cognito_user_pool_client.oidc_auth.client_secret
   sensitive = true
 }
 
-output "AWS_REGION" {
-  value = data.aws_region.current.id
+output "oidc_scope" {
+  value = "${aws_cognito_resource_server.appsync.identifier}/custom"
 }
 
-output "USER_POOL" {
-  value = aws_cognito_user_pool.dev.id
+output "cognito_issuer" {
+  value = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.e2e.id}"
 }
 
-output "USER_POOL_CLIENT" {
-  value = aws_cognito_user_pool_client.dev.id
+output "appsync_http_endpoint" {
+  value = "https://${aws_appsync_api.e2e.dns.HTTP}/event"
 }
 
-
-output "OIDC_CLIENT_ID" {
-  value = aws_cognito_user_pool_client.oidc.id
+output "appsync_ws_endpoint" {
+  value = "wss://${aws_appsync_api.e2e.dns.REALTIME}/event/realtime"
 }
 
+output "appsync_api_key" {
+  value     = aws_appsync_api_key.e2e.key
+  sensitive = true
+}

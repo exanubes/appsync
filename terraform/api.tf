@@ -1,71 +1,138 @@
-data "aws_region" "current" {}
+resource "aws_appsync_api" "e2e" {
+  name = local.name_prefix
 
-resource "aws_appsync_api" "dev" {
-  name = "appsync-dev"
 
   event_config {
-    // INFO: Valid auth provider types: API_KEY, AWS_IAM, AMAZON_COGNITO_USER_POOLS, OPENID_CONNECT, AWS_LAMBDA.
-    auth_provider {
-      auth_type = "AWS_IAM"
-    }
-
     auth_provider {
       auth_type = "API_KEY"
     }
 
     auth_provider {
-      auth_type = "AMAZON_COGNITO_USER_POOLS"
-      cognito_config {
-        user_pool_id = aws_cognito_user_pool.dev.id
-        aws_region   = data.aws_region.current.region
-      }
+      auth_type = "AWS_IAM"
     }
 
     auth_provider {
       auth_type = "AWS_LAMBDA"
+
       lambda_authorizer_config {
         authorizer_uri                   = aws_lambda_function.authorizer.arn
-        authorizer_result_ttl_in_seconds = 300
+        authorizer_result_ttl_in_seconds = 0
+      }
+    }
+
+    auth_provider {
+      auth_type = "AMAZON_COGNITO_USER_POOLS"
+
+      cognito_config {
+        user_pool_id = aws_cognito_user_pool.e2e.id
+        aws_region   = var.aws_region
       }
     }
 
     auth_provider {
       auth_type = "OPENID_CONNECT"
+
       openid_connect_config {
-        issuer   = "https://cognito-idp.${data.aws_region.current.id}.amazonaws.com/${aws_cognito_user_pool.dev.id}"
+        issuer   = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.e2e.id}"
         auth_ttl = 3600000
         iat_ttl  = 3600000
       }
     }
 
     connection_auth_mode {
+      auth_type = "API_KEY"
+    }
+
+    connection_auth_mode {
       auth_type = "AWS_IAM"
+    }
+
+    connection_auth_mode {
+      auth_type = "AWS_LAMBDA"
+    }
+
+    connection_auth_mode {
+      auth_type = "AMAZON_COGNITO_USER_POOLS"
+    }
+
+    connection_auth_mode {
+      auth_type = "OPENID_CONNECT"
     }
 
     default_publish_auth_mode {
-      auth_type = "AWS_IAM"
+      auth_type = "API_KEY"
     }
 
     default_subscribe_auth_mode {
-      auth_type = "AWS_IAM"
+      auth_type = "API_KEY"
     }
   }
 }
+resource "aws_appsync_api_key" "e2e" {
+  api_id = aws_appsync_api.e2e.api_id
+}
 
+resource "aws_appsync_channel_namespace" "api_key" {
+  api_id = aws_appsync_api.e2e.api_id
+  name   = "${local.name_prefix}-api-key"
 
-resource "aws_appsync_channel_namespace" "dev" {
-  name   = "appsync-dev"
-  api_id = aws_appsync_api.dev.api_id
+  publish_auth_mode {
+    auth_type = "API_KEY"
+  }
 
   subscribe_auth_mode {
-    auth_type = "AWS_IAM"
+    auth_type = "API_KEY"
   }
+}
+
+resource "aws_appsync_channel_namespace" "iam" {
+  api_id = aws_appsync_api.e2e.api_id
+  name   = "${local.name_prefix}-iam"
 
   publish_auth_mode {
     auth_type = "AWS_IAM"
   }
+
+  subscribe_auth_mode {
+    auth_type = "AWS_IAM"
+  }
 }
 
-resource "aws_appsync_api_key" "dev" {
-  api_id = aws_appsync_api.dev.api_id
+resource "aws_appsync_channel_namespace" "lambda" {
+  api_id = aws_appsync_api.e2e.api_id
+  name   = "${local.name_prefix}-lambda"
+
+  publish_auth_mode {
+    auth_type = "AWS_LAMBDA"
+  }
+
+  subscribe_auth_mode {
+    auth_type = "AWS_LAMBDA"
+  }
+}
+
+resource "aws_appsync_channel_namespace" "cognito" {
+  api_id = aws_appsync_api.e2e.api_id
+  name   = "${local.name_prefix}-cognito"
+
+  publish_auth_mode {
+    auth_type = "AMAZON_COGNITO_USER_POOLS"
+  }
+
+  subscribe_auth_mode {
+    auth_type = "AMAZON_COGNITO_USER_POOLS"
+  }
+}
+
+resource "aws_appsync_channel_namespace" "oidc" {
+  api_id = aws_appsync_api.e2e.api_id
+  name   = "${local.name_prefix}-oidc"
+
+  publish_auth_mode {
+    auth_type = "OPENID_CONNECT"
+  }
+
+  subscribe_auth_mode {
+    auth_type = "OPENID_CONNECT"
+  }
 }

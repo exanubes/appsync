@@ -28,7 +28,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 	cases := []auth_case{
 		{
 			name:      "api_key",
-			namespace: "api-key-e2e",
+			namespace: require_env(t, "APPSYNC_E2E_NS_API_KEY"),
 			authz: func(endpoint string) (authorizer.Authorizer, error) {
 				return authorizer.ApiKey(authorizer.ApiKeyAuthorizerConfig{
 					ApiKey:   require_env(t, "APPSYNC_E2E_API_KEY"),
@@ -38,7 +38,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		},
 		{
 			name:      "iam",
-			namespace: "iam-e2e",
+			namespace: require_env(t, "APPSYNC_E2E_NS_IAM"),
 			authz: func(endpoint string) (authorizer.Authorizer, error) {
 				return authorizer.IAM(authorizer.IAMAuthorizerConfig{
 					Region:   aws_region,
@@ -48,7 +48,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		},
 		{
 			name:      "lambda",
-			namespace: "lambda-e2e",
+			namespace: require_env(t, "APPSYNC_E2E_NS_LAMBDA"),
 			authz: func(endpoint string) (authorizer.Authorizer, error) {
 				return authorizer.Token(authorizer.TokenAuthorizerConfig{
 					AuthToken: require_env(t, "APPSYNC_E2E_LAMBDA_TOKEN"),
@@ -58,7 +58,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		},
 		{
 			name:      "cognito",
-			namespace: "cognito-e2e",
+			namespace: require_env(t, "APPSYNC_E2E_NS_COGNITO"),
 			authz: func(endpoint string) (authorizer.Authorizer, error) {
 				return authorizer.Token(authorizer.TokenAuthorizerConfig{
 					AuthToken: require_env(t, "APPSYNC_E2E_COGNITO_ID_TOKEN"),
@@ -68,7 +68,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 		},
 		{
 			name:      "oidc",
-			namespace: "oidc-e2e",
+			namespace: require_env(t, "APPSYNC_E2E_NS_OIDC"),
 			authz: func(endpoint string) (authorizer.Authorizer, error) {
 				return authorizer.Token(authorizer.TokenAuthorizerConfig{
 					AuthToken: require_env(t, "APPSYNC_E2E_OIDC_TOKEN"),

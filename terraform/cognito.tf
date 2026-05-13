@@ -1,6 +1,14 @@
 
-resource "aws_cognito_user_pool" "dev" {
-  name = "appsync-dev"
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+locals {
+  name_prefix = "e2e-appsync-${random_id.suffix.hex}"
+}
+
+resource "aws_cognito_user_pool" "e2e" {
+  name = local.name_prefix
 
   mfa_configuration = "OFF"
 
@@ -27,9 +35,10 @@ resource "aws_cognito_user_pool" "dev" {
   }
 }
 
-resource "aws_cognito_user_pool_client" "dev" {
-  name            = "appsync-dev-client"
-  user_pool_id    = aws_cognito_user_pool.dev.id
+resource "aws_cognito_user_pool_client" "cognito_auth" {
+  name         = "${local.name_prefix}-cognito-client"
+  user_pool_id = aws_cognito_user_pool.e2e.id
+
   generate_secret = false
 
   explicit_auth_flows = [
@@ -47,32 +56,45 @@ resource "aws_cognito_user_pool_client" "dev" {
   }
 }
 
-resource "aws_cognito_user_pool_domain" "dev" {
-  domain       = "appsync-dev-exanubes"
-  user_pool_id = aws_cognito_user_pool.dev.id
+resource "aws_cognito_user_pool_domain" "e2e" {
+  domain       = local.name_prefix
+  user_pool_id = aws_cognito_user_pool.e2e.id
 }
 
 resource "aws_cognito_resource_server" "appsync" {
-  user_pool_id = aws_cognito_user_pool.dev.id
+  user_pool_id = aws_cognito_user_pool.e2e.id
 
-  identifier = "exanubes"
-  name       = "exanubes"
+  identifier = local.name_prefix
+  name       = local.name_prefix
 
   scope {
     scope_name        = "custom"
-    scope_description = "Need a custom scope for making oidc client work with client_credentials oauth flow"
+    scope_description = "Custom scope for AppSync OIDC e2e client_credentials flow"
   }
 }
 
-resource "aws_cognito_user_pool_client" "oidc" {
-  name         = "appsync-dev-oidc-client"
-  user_pool_id = aws_cognito_user_pool.dev.id
+resource "aws_cognito_user_pool_client" "oidc_auth" {
+  name         = "${local.name_prefix}-oidc-client"
+  user_pool_id = aws_cognito_user_pool.e2e.id
 
   allowed_oauth_flows_user_pool_client = true
-  allowed_oauth_flows                  = ["client_credentials"]
-  allowed_oauth_scopes = [
-    "exanubes/custom"
+  allowed_oauth_flows = [
+    "client_credentials",
   ]
+
+  allowed_oauth_scopes = [
+    "${aws_cognito_resource_server.appsync.identifier}/custom",
+  ]
+
   generate_secret = true
-  depends_on      = [aws_cognito_resource_server.appsync]
+
+  access_token_validity = 60
+
+  token_validity_units {
+    access_token = "minutes"
+  }
+
+  depends_on = [
+    aws_cognito_resource_server.appsync,
+  ]
 }

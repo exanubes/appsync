@@ -18,7 +18,7 @@ env:
   AWS_REGION: eu-central-1
   TF_IN_AUTOMATION: "true"
   TF_INPUT: "false"
-  TERRAFORM_E2E_DIR: terraform/e2e
+  TERRAFORM_E2E_DIR: terraform
 
 jobs:
   e2e:
@@ -93,6 +93,12 @@ jobs:
           echo "OIDC_USER_POOL_CLIENT_SECRET=$oidc_secret" >> "$GITHUB_ENV"
 
           echo "OIDC_SCOPE=$(terraform output -raw oidc_scope)" >> "$GITHUB_ENV"
+
+          echo "APPSYNC_E2E_NS_API_KEY=$(terraform output -raw namespace_api_key)" >> "$GITHUB_ENV"
+          echo "APPSYNC_E2E_NS_IAM=$(terraform output -raw namespace_iam)" >> "$GITHUB_ENV"
+          echo "APPSYNC_E2E_NS_LAMBDA=$(terraform output -raw namespace_lambda)" >> "$GITHUB_ENV"
+          echo "APPSYNC_E2E_NS_COGNITO=$(terraform output -raw namespace_cognito)" >> "$GITHUB_ENV"
+          echo "APPSYNC_E2E_NS_OIDC=$(terraform output -raw namespace_oidc)" >> "$GITHUB_ENV"
 
       - name: Create Cognito user and export ID token
         run: |

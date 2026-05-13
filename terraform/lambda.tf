@@ -1,8 +1,8 @@
 resource "aws_lambda_function" "authorizer" {
-  function_name    = "e2e-lambda-authorizer"
+  function_name    = "${local.name_prefix}-authorizer"
   role             = aws_iam_role.authorizer.arn
-  filename         = "../../dist/authorizer/function.zip"
-  source_code_hash = filebase64sha256("../../dist/authorizer/function.zip")
+  filename         = "../dist/authorizer/function.zip"
+  source_code_hash = filebase64sha256("../dist/authorizer/function.zip")
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   architectures    = ["arm64"]
@@ -15,7 +15,7 @@ resource "aws_lambda_function" "authorizer" {
 }
 
 resource "aws_iam_role" "authorizer" {
-  name = "e2e-authorizer"
+  name = "${local.name_prefix}-authorizer"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
