@@ -28,6 +28,7 @@ and authorizing requests with API key, IAM, Lambda authorizer, Cognito User Pool
 - [Examples](#examples)
 - [Limitations](#limitations)
 - [Tips](#tips)
+- [Status](#status)
 - [License](#license)
 
 ## Installation
@@ -513,6 +514,18 @@ A custom authorizer may be called for every connect, subscribe, publish, and uns
 work where possible, cache stable data safely, and refresh credentials/tokens deliberately when your auth model 
 requires it.
 
+## Status
+
+The API is the desired shape and it "works for me", however, since the library does not yet support the full Appsync 
+Events API featureset, I've decided to have it as a v0 in case somebody actually uses this and I need to break the API
+in the future for some reason.
+
+Missing features:
+
+- authorizer per request
+- HTTP Publish
+- Batch Publish 
+- something else I missed probably
 
 ## License
 
