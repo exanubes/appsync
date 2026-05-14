@@ -5,7 +5,7 @@ AWS_REGION="eu-central-1"
 LAMBDA_AUTHORIZER_TOKEN="local-e2e-token"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-TF_DIR="$REPO_ROOT/terraform/e2e"
+TF_DIR="$REPO_ROOT/terraform"
 ENV_FILE="$REPO_ROOT/.env.e2e"
 
 echo "==> Destroying Terraform resources..."
