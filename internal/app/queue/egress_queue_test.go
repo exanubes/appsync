@@ -61,11 +61,11 @@ func TestEgressQueue_Enqueue(t *testing.T) {
 	payload := []byte("test-payload")
 
 	tests := []struct {
-		name           string
-		setup          func(*queue.EgressQueue)
-		ctx            func() context.Context
-		payload        []byte
-		expect_err     error
+		name       string
+		setup      func(*queue.EgressQueue)
+		ctx        func() context.Context
+		payload    []byte
+		expect_err error
 	}{
 		{
 			name:       "enqueues payload successfully",

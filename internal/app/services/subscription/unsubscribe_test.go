@@ -84,14 +84,13 @@ func TestUnsubscribe(t *testing.T) {
 	signature := app.Signature{"Authorization": "sig-value"}
 
 	tests := []struct {
-		name              string
-		registry          *mock_unsubscribe_registry
-		authorizer        *mock_authorizer
-		sender            *mock_sender
-		expect_err        error
-		expect_send       bool
-		expect_sub_closed bool
-		expect_removed    string
+		name        string
+		registry    *mock_unsubscribe_registry
+		authorizer  *mock_authorizer
+		sender      *mock_sender
+		expect_err  error
+		expect_send bool
+		verify      func(*testing.T, *mock_frame_builder, *mock_unsubscribe_registry)
 	}{
 		{
 			name:       "subscription not found",
@@ -121,16 +120,51 @@ func TestUnsubscribe(t *testing.T) {
 			sender:      &mock_sender{err: send_err},
 			expect_err:  send_err,
 			expect_send: true,
+			verify: func(t *testing.T, frame *mock_frame_builder, registry *mock_unsubscribe_registry) {
+				if frame.frame_type != protocol.TypeUnsubscribe {
+					t.Errorf("frame.frame_type = %q, want %q", frame.frame_type, protocol.TypeUnsubscribe)
+				}
+				if frame.id != subscriptionId {
+					t.Errorf("frame.id = %q, want %q", frame.id, subscriptionId)
+				}
+				for k, v := range signature {
+					if frame.signature[k] != v {
+						t.Errorf("frame.signature[%q] = %q, want %q", k, frame.signature[k], v)
+					}
+				}
+				if !registry.sub.Active() {
+					t.Error("subscription should remain active when send fails")
+				}
+				if registry.removed != "" {
+					t.Errorf("registry.removed = %q, want empty", registry.removed)
+				}
+			},
 		},
 		{
-			name:              "success",
-			registry:          &mock_unsubscribe_registry{sub: active_subscription()},
-			authorizer:        &mock_authorizer{signature: signature},
-			sender:            &mock_sender{},
-			expect_err:        nil,
-			expect_send:       true,
-			expect_sub_closed: true,
-			expect_removed:    subscriptionId,
+			name:        "success",
+			registry:    &mock_unsubscribe_registry{sub: active_subscription()},
+			authorizer:  &mock_authorizer{signature: signature},
+			sender:      &mock_sender{},
+			expect_send: true,
+			verify: func(t *testing.T, frame *mock_frame_builder, registry *mock_unsubscribe_registry) {
+				if frame.frame_type != protocol.TypeUnsubscribe {
+					t.Errorf("frame.frame_type = %q, want %q", frame.frame_type, protocol.TypeUnsubscribe)
+				}
+				if frame.id != subscriptionId {
+					t.Errorf("frame.id = %q, want %q", frame.id, subscriptionId)
+				}
+				for k, v := range signature {
+					if frame.signature[k] != v {
+						t.Errorf("frame.signature[%q] = %q, want %q", k, frame.signature[k], v)
+					}
+				}
+				if registry.sub.Active() {
+					t.Error("subscription should be closed after successful unsubscribe")
+				}
+				if registry.removed != subscriptionId {
+					t.Errorf("registry.removed = %q, want %q", registry.removed, subscriptionId)
+				}
+			},
 		},
 	}
 
@@ -145,39 +179,11 @@ func TestUnsubscribe(t *testing.T) {
 			if !errors.Is(err, tt.expect_err) {
 				t.Errorf("got error %v, want %v", err, tt.expect_err)
 			}
-
 			if tt.sender.called != tt.expect_send {
 				t.Errorf("sender.called = %v, want %v", tt.sender.called, tt.expect_send)
 			}
-
-			if tt.expect_send {
-				if frame.frame_type != protocol.TypeUnsubscribe {
-					t.Errorf("frame.frame_type = %q, want %q", frame.frame_type, protocol.TypeUnsubscribe)
-				}
-				if frame.id != subscriptionId {
-					t.Errorf("frame.id = %q, want %q", frame.id, subscriptionId)
-				}
-				for k, v := range tt.authorizer.signature {
-					if frame.signature[k] != v {
-						t.Errorf("frame.signature[%q] = %q, want %q", k, frame.signature[k], v)
-					}
-				}
-			}
-
-			if tt.expect_sub_closed && tt.registry.sub != nil {
-				if tt.registry.sub.Active() {
-					t.Error("subscription should be closed after successful unsubscribe")
-				}
-			}
-
-			if !tt.expect_sub_closed && tt.registry.sub != nil && tt.expect_err != app.ErrSubscriptionClosed {
-				if !tt.registry.sub.Active() {
-					t.Error("subscription should remain active when execution fails")
-				}
-			}
-
-			if tt.registry.removed != tt.expect_removed {
-				t.Errorf("registry.removed = %q, want %q", tt.registry.removed, tt.expect_removed)
+			if tt.verify != nil {
+				tt.verify(t, frame, tt.registry)
 			}
 		})
 	}

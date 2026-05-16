@@ -42,12 +42,12 @@ func TestShutdownConnection(t *testing.T) {
 	sentinel_trans := errors.New("transport close failed")
 
 	tests := []struct {
-		name           string
-		registry_ids   []string
-		remover_err    error
-		runtime_err    error
-		transport_err  error
-		expect_errors  []error
+		name          string
+		registry_ids  []string
+		remover_err   error
+		runtime_err   error
+		transport_err error
+		expect_errors []error
 	}{
 		{
 			name:          "success",

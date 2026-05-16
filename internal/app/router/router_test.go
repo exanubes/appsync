@@ -26,12 +26,12 @@ func TestHandle(t *testing.T) {
 	const id = "sub-1"
 
 	tests := []struct {
-		name         string
-		msg          any
-		setup        func(*pending.Registry)
-		receive      *mock_receive_data
-		expect_err   bool
-		verify       func(*testing.T, *pending.Registry, *mock_receive_data)
+		name       string
+		msg        any
+		setup      func(*pending.Registry)
+		receive    *mock_receive_data
+		expect_err bool
+		verify     func(*testing.T, *pending.Registry, *mock_receive_data)
 	}{
 		{
 			name:    "error message without id returns error",
