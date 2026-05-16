@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/exanubes/appsync/internal/app"
-	"github.com/google/uuid"
 )
 
 type FrameBuilderFactory struct{}
@@ -58,7 +57,7 @@ func (builder *FrameBuilder) Build() app.Frame {
 	if builder.id != "" {
 		id = builder.id
 	} else {
-		id = uuid.NewString()
+		id = generate_id()
 	}
 	return Frame{
 		Id:        id,
