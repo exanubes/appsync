@@ -10,4 +10,5 @@ var (
 	ErrSubscriptionClosed    = app.ErrSubscriptionClosed
 	ErrSubscriptionNotFound  = app.ErrSubscriptionNotFound
 	ErrHeartbeatTimeout      = app.ErrHeartbeatTimeout
+	ErrConnectionClosed      = app.ErrConnectionClosed
 )

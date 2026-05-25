@@ -31,3 +31,7 @@ type Runtime interface {
 type Inbox interface {
 	Next(context.Context) (app.Message, error)
 }
+
+type ConnectionState interface {
+	Close(error)
+}

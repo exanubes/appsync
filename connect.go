@@ -9,6 +9,7 @@ import (
 	"github.com/exanubes/appsync/internal/app"
 	"github.com/exanubes/appsync/internal/app/engine"
 	"github.com/exanubes/appsync/internal/app/heartbeat"
+	"github.com/exanubes/appsync/internal/app/lifecycle"
 	"github.com/exanubes/appsync/internal/app/pending"
 	"github.com/exanubes/appsync/internal/app/queue"
 	"github.com/exanubes/appsync/internal/app/router"
@@ -133,6 +134,7 @@ func (builder *builder) Connect(ctx context.Context) (*appsync_client, error) {
 		return nil, err
 	}
 
+	connection_state := lifecycle.NewState()
 	clock := clock.New()
 	heartbeat := heartbeat.New(clock)
 	ingress_queue := queue.NewIngressQueue(builder.backpressure.ConnectionInbound)
@@ -149,7 +151,13 @@ func (builder *builder) Connect(ctx context.Context) (*appsync_client, error) {
 
 	msg_router := router.New(pending_registry, usecases.ReceiveData)
 	runtime := runtime.New(ingress_queue, msg_router, heartbeat)
-	session := engine.New(heartbeat, runtime, io_loops, builder.logger)
+	session := engine.New(
+		heartbeat,
+		runtime,
+		io_loops,
+		connection_state,
+		builder.logger,
+	)
 	session.Start(ctx, engine.StartEngineInput{
 		Timeout: connection_output.Timeout,
 	})

@@ -146,9 +146,9 @@ func TestConnect(t *testing.T) {
 			},
 		},
 		{
-			name:      "generated subprotocol appended to input subprotocols",
-			generator: &mock_subprotocol_generator{result: "header-xyz"},
-			dialer:    &mock_dialer{conn: conn},
+			name:       "generated subprotocol appended to input subprotocols",
+			generator:  &mock_subprotocol_generator{result: "header-xyz"},
+			dialer:     &mock_dialer{conn: conn},
 			authorizer: &mock_connection_authorizer{timeout: timeout},
 			input: connection.CreateConnectionInput{
 				Url:          endpoint,

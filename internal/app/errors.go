@@ -9,3 +9,4 @@ var ErrSubscriptionInboxFull = errors.New("Subscription incoming message buffer 
 var ErrSubscriptionClosed = errors.New("Subscription is closed")
 var ErrSubscriptionNotFound = errors.New("Subscription not found")
 var ErrHeartbeatTimeout = errors.New("Heartbeat timeout")
+var ErrConnectionClosed = errors.New("Connection closed")

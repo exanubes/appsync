@@ -68,9 +68,13 @@ func (m *mock_heartbeat) Start(ctx context.Context, _ time.Duration) error {
 
 func (m *mock_heartbeat) Reset() {}
 
+type mock_connection_state struct{}
+
+func (m *mock_connection_state) Close(cause error) {}
+
 func TestNew(t *testing.T) {
 	logger := &stub_logger{}
-	engine.New(&mock_heartbeat{}, &mock_runtime{}, &mock_io{}, logger)
+	engine.New(&mock_heartbeat{}, &mock_runtime{}, &mock_io{}, &mock_connection_state{}, logger)
 	if logger.ctx != "Engine" {
 		t.Errorf("expected logger context 'Engine', got %q", logger.ctx)
 	}
@@ -81,7 +85,7 @@ func TestStart_calls_all_goroutines(t *testing.T) {
 	runtime := &mock_runtime{}
 	hb := &mock_heartbeat{}
 
-	e := engine.New(hb, runtime, io, &stub_logger{})
+	e := engine.New(hb, runtime, io, &mock_connection_state{}, &stub_logger{})
 	e.Start(context.Background(), engine.StartEngineInput{Timeout: time.Second})
 	e.Close(context.Background())
 
@@ -137,7 +141,7 @@ func TestClose(t *testing.T) {
 			runtime := &mock_runtime{err: tt.err}
 			hb := &mock_heartbeat{err: tt.err}
 
-			e := engine.New(hb, runtime, io, &stub_logger{})
+			e := engine.New(hb, runtime, io, &mock_connection_state{}, &stub_logger{})
 			e.Start(context.Background(), engine.StartEngineInput{Timeout: time.Second})
 			err := e.Close(context.Background())
 
