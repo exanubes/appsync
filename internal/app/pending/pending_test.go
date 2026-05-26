@@ -8,6 +8,10 @@ import (
 	"github.com/exanubes/appsync/internal/app/pending"
 )
 
+type mock_connection_state struct{}
+
+func (m *mock_connection_state) Done() <-chan struct{} { return make(chan struct{}) }
+
 func TestHas(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -33,7 +37,7 @@ func TestHas(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			registry := pending.NewRegistry()
+			registry := pending.NewRegistry(&mock_connection_state{})
 			tt.setup(registry)
 			has := registry.Has(tt.id)
 			if has != tt.expect_has {
@@ -56,7 +60,7 @@ func TestRegister(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			registry := pending.NewRegistry()
+			registry := pending.NewRegistry(&mock_connection_state{})
 			registry.Register(tt.id)
 			if !registry.Has(tt.id) {
 				t.Errorf("Has(%q) = false after Register, want true", tt.id)
@@ -123,7 +127,7 @@ func TestFulfill(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			registry := pending.NewRegistry()
+			registry := pending.NewRegistry(&mock_connection_state{})
 			tt.setup(registry)
 			err := registry.Fulfill(tt.ctx(), tt.id, tt.err)
 			if !errors.Is(err, tt.expect_err) {
@@ -203,7 +207,7 @@ func TestConsume(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			registry := pending.NewRegistry()
+			registry := pending.NewRegistry(&mock_connection_state{})
 			tt.setup(registry)
 			err := registry.Consume(tt.ctx(), tt.id)
 			if !errors.Is(err, tt.expect_err) {

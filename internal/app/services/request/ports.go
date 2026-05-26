@@ -10,6 +10,7 @@ type Outbox interface {
 
 type Registry interface {
 	Register(id string)
+	Remove(id string)
 	Consume(ctx context.Context, id string) error
 	Has(id string) bool
 }

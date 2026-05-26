@@ -10,6 +10,10 @@ import (
 	"github.com/exanubes/appsync/internal/app/router"
 )
 
+type mock_connection_state struct{}
+
+func (m *mock_connection_state) Done() <-chan struct{} { return make(chan struct{}) }
+
 type mock_receive_data struct {
 	called   bool
 	received protocol.DataMessage
@@ -110,7 +114,7 @@ func TestHandle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			registry := pending.NewRegistry()
+			registry := pending.NewRegistry(&mock_connection_state{})
 			if tt.setup != nil {
 				tt.setup(registry)
 			}

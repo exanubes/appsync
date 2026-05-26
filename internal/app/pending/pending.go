@@ -1,14 +1,20 @@
 package pending
 
-import "context"
+import (
+	"context"
+
+	"github.com/exanubes/appsync/internal/app"
+)
 
 type Registry struct {
-	store map[string]chan error
+	store      map[string]chan error
+	connection ConnectionState
 }
 
-func NewRegistry() *Registry {
+func NewRegistry(connection ConnectionState) *Registry {
 	return &Registry{
-		store: make(map[string]chan error),
+		store:      make(map[string]chan error),
+		connection: connection,
 	}
 }
 
@@ -33,7 +39,13 @@ func (registry Registry) Fulfill(ctx context.Context, id string, err error) erro
 		return ctx.Err()
 	case reply <- err:
 		return nil
+	case <-registry.connection.Done():
+		return app.ErrConnectionClosed
 	}
+}
+
+func (registry Registry) Remove(id string) {
+	delete(registry.store, id)
 }
 
 func (registry Registry) get(id string) chan error {
@@ -54,5 +66,7 @@ func (registry Registry) Consume(ctx context.Context, id string) error {
 		return ctx.Err()
 	case res := <-reply:
 		return res
+	case <-registry.connection.Done():
+		return app.ErrConnectionClosed
 	}
 }

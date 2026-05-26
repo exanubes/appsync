@@ -29,6 +29,11 @@ type mock_registry struct {
 
 func (m *mock_registry) Has(_ string) bool  { return m.has }
 func (m *mock_registry) Register(id string) { m.register_id = id }
+func (m *mock_registry) Remove(id string) {
+	if m.register_id == id {
+		m.register_id = ""
+	}
+}
 func (m *mock_registry) Consume(_ context.Context, id string) error {
 	return m.consume_err
 }

@@ -25,16 +25,20 @@ func (service *SendRequestService) Send(ctx context.Context, input app.Frame) er
 	if service.pending.Has(input.ID()) {
 		return app.ErrDuplicateMessage
 	}
+
 	payload, err := input.Encode()
 	if err != nil {
 		return err
 	}
+
+	service.pending.Register(input.ID())
+
 	err = service.egress.Enqueue(ctx, payload)
 
 	if err != nil {
+		service.pending.Remove(input.ID())
 		return err
 	}
-	service.pending.Register(input.ID())
 
 	return service.pending.Consume(ctx, input.ID())
 }

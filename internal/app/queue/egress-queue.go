@@ -2,15 +2,19 @@ package queue
 
 import (
 	"context"
+
+	"github.com/exanubes/appsync/internal/app"
 )
 
 type EgressQueue struct {
-	inbox chan []byte
+	inbox      chan []byte
+	connection ConnectionState
 }
 
-func NewEgressQueue(max_size uint) *EgressQueue {
+func NewEgressQueue(max_size uint, connection ConnectionState) *EgressQueue {
 	return &EgressQueue{
-		inbox: make(chan []byte, max_size),
+		inbox:      make(chan []byte, max_size),
+		connection: connection,
 	}
 }
 
@@ -29,5 +33,7 @@ func (registry *EgressQueue) Enqueue(ctx context.Context, payload []byte) error 
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
+	case <-registry.connection.Done():
+		return app.ErrConnectionClosed
 	}
 }

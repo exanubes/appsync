@@ -138,8 +138,8 @@ func (builder *builder) Connect(ctx context.Context) (*appsync_client, error) {
 	clock := clock.New()
 	heartbeat := heartbeat.New(clock)
 	ingress_queue := queue.NewIngressQueue(builder.backpressure.ConnectionInbound)
-	egress_queue := queue.NewEgressQueue(builder.backpressure.ConnectionOutbound)
-	pending_registry := pending.NewRegistry()
+	egress_queue := queue.NewEgressQueue(builder.backpressure.ConnectionOutbound, connection_state)
+	pending_registry := pending.NewRegistry(connection_state)
 	io_loops := io.New(ingress_queue, egress_queue, connection_output.Connection, msg_codec)
 	usecases, services := composition.NewUseCases(
 		request_authorizer,
@@ -172,7 +172,8 @@ func (builder *builder) Connect(ctx context.Context) (*appsync_client, error) {
 	usecases.Shutdown = shutdown_connection_usecase
 
 	return &appsync_client{
-		usecases: usecases,
+		usecases:   usecases,
+		connection: connection_state,
 	}, nil
 }
 

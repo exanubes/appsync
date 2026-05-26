@@ -3,6 +3,7 @@ package appsync
 import (
 	"context"
 
+	"github.com/exanubes/appsync/internal/app/lifecycle"
 	"github.com/exanubes/appsync/internal/app/usecases/publish"
 	"github.com/exanubes/appsync/internal/app/usecases/subscribe"
 	"github.com/exanubes/appsync/internal/composition"
@@ -13,10 +14,15 @@ import (
 const ProtocolEvents = "aws-appsync-event-ws"
 
 type appsync_client struct {
-	usecases *composition.UseCases
+	usecases   *composition.UseCases
+	connection *lifecycle.State
 }
 
 func (client *appsync_client) Publish(ctx context.Context, input PublishCommandInput) error {
+	if err := client.connection.Err(); err != nil {
+		return err
+	}
+
 	frame := &events.FrameBuilder{}
 
 	err := client.usecases.Publish.Publish(ctx, publish.PublishCommandInput{
@@ -28,6 +34,10 @@ func (client *appsync_client) Publish(ctx context.Context, input PublishCommandI
 }
 
 func (client *appsync_client) Subscribe(ctx context.Context, input SubscribeCommandInput) (Subscription, error) {
+	if err := client.connection.Err(); err != nil {
+		return nil, err
+	}
+
 	frame := &events.FrameBuilder{}
 	result, err := client.usecases.Subscribe.Execute(ctx, subscribe.SubscribeCommandInput{
 		Channel: input.Channel,

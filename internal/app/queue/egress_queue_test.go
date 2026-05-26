@@ -8,6 +8,10 @@ import (
 	"github.com/exanubes/appsync/internal/app/queue"
 )
 
+type mock_connection_state struct{}
+
+func (m *mock_connection_state) Done() <-chan struct{} { return make(chan struct{}) }
+
 func TestEgressQueue_Next(t *testing.T) {
 	payload := []byte("test-payload")
 
@@ -42,7 +46,7 @@ func TestEgressQueue_Next(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := queue.NewEgressQueue(1)
+			q := queue.NewEgressQueue(1, &mock_connection_state{})
 			tt.setup(q)
 
 			got, err := q.Next(tt.ctx())
@@ -91,7 +95,7 @@ func TestEgressQueue_Enqueue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := queue.NewEgressQueue(1)
+			q := queue.NewEgressQueue(1, &mock_connection_state{})
 			tt.setup(q)
 
 			err := q.Enqueue(tt.ctx(), tt.payload)
