@@ -443,6 +443,7 @@ The root package exposes sentinel errors that callers can check with `errors.Is`
 - `appsync.ErrSubscriptionClosed`
 - `appsync.ErrSubscriptionNotFound`
 - `appsync.ErrHeartbeatTimeout`
+- `appsync.ErrConnectionClosed`
 
 Typical handling:
 
@@ -468,6 +469,8 @@ Relevant behavior:
 - `ErrHeartbeatTimeout` means keep-alive messages stopped arriving within the expected connection timeout window.
 - `ErrSubscriptionClosed` means the subscription is no longer active.
 - `ErrSubscriptionInboxFull` means the subscriber did not consume events fast enough for its configured buffer.
+- `ErrConnectionClosed` means the connection is no longer live either because it was manually closed or because there 
+was an error which will be joined with this error
 - Context cancellation and deadlines are propagated from public methods where applicable.
 
 ## Examples
