@@ -15,9 +15,11 @@ import (
 type mock_authorizer struct {
 	signature app.Signature
 	err       error
+	called    bool
 }
 
 func (m *mock_authorizer) Authorize(_ context.Context, _ app.AuthorizeCommandInput) (app.Signature, error) {
+	m.called = true
 	return m.signature, m.err
 }
 
@@ -74,16 +76,17 @@ func TestSubscribeChannel(t *testing.T) {
 	sub, _ := subscription.New(frame_id, channel, 1)
 
 	tests := []struct {
-		name           string
-		authorizer     *mock_authorizer
-		sender         *mock_sender
-		create_sub     *mock_create_subscription
-		expect_err     error
-		expect_sub_id  string
-		expect_sub     *subscription.Subscription
-		expect_type    string
-		expect_channel string
-		expect_sig     app.Signature
+		name             string
+		authorizer       *mock_authorizer
+		sender           *mock_sender
+		create_sub       *mock_create_subscription
+		input_authorizer *mock_authorizer
+		expect_err       error
+		expect_sub_id    string
+		expect_sub       *subscription.Subscription
+		expect_type      string
+		expect_channel   string
+		expect_sig       app.Signature
 	}{
 		{
 			name:           "success",
@@ -111,6 +114,19 @@ func TestSubscribeChannel(t *testing.T) {
 			create_sub: &mock_create_subscription{},
 			expect_err: send_err,
 		},
+		{
+			name:             "override authorizer",
+			authorizer:       &mock_authorizer{signature: app.Signature{"Authorization": "default-sig"}},
+			sender:           &mock_sender{},
+			create_sub:       &mock_create_subscription{sub: sub},
+			input_authorizer: &mock_authorizer{signature: signature},
+			expect_err:       nil,
+			expect_sub_id:    frame_id,
+			expect_sub:       sub,
+			expect_type:      protocol.TypeSubscribe,
+			expect_channel:   channel,
+			expect_sig:       signature,
+		},
 	}
 
 	for _, tt := range tests {
@@ -118,9 +134,14 @@ func TestSubscribeChannel(t *testing.T) {
 			frame := &mock_frame_builder{built_frame: mock_frame{id: frame_id}}
 			usecase := subscribe.NewSubscribeChannelUsecase(tt.authorizer, tt.sender, tt.create_sub)
 
+			var inputAuth app.RequestAuthorizer
+			if tt.input_authorizer != nil {
+				inputAuth = tt.input_authorizer
+			}
 			output, err := usecase.Execute(context.Background(), subscribe.SubscribeCommandInput{
-				Channel: channel,
-				Frame:   frame,
+				Channel:    channel,
+				Frame:      frame,
+				Authorizer: inputAuth,
 			})
 
 			if !errors.Is(err, tt.expect_err) {
@@ -162,6 +183,15 @@ func TestSubscribeChannel(t *testing.T) {
 
 			if tt.create_sub.input.Channel != channel {
 				t.Errorf("create_sub.input.Channel = %q, want %q", tt.create_sub.input.Channel, channel)
+			}
+
+			if tt.input_authorizer != nil {
+				if !tt.input_authorizer.called {
+					t.Error("expected override authorizer to be called, but it was not")
+				}
+				if tt.authorizer.called {
+					t.Error("expected default authorizer not to be called, but it was")
+				}
 			}
 		})
 	}

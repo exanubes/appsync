@@ -32,7 +32,8 @@ type PublishCommandInput struct {
 }
 
 type SubscribeCommandInput struct {
-	Channel string
+	Channel    string
+	Authorizer authorizer.Authorizer
 }
 
 type NextMessageOutput struct {

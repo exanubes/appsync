@@ -9,8 +9,9 @@ import (
 )
 
 type SubscribeCommandInput struct {
-	Channel string
-	Frame   app.FrameBuilder
+	Channel    string
+	Frame      app.FrameBuilder
+	Authorizer app.RequestAuthorizer
 }
 type SubscribeCommandOutput struct {
 	SubID        string

@@ -3,10 +3,12 @@ package appsync
 import (
 	"context"
 
+	"github.com/exanubes/appsync/internal/app"
 	"github.com/exanubes/appsync/internal/app/lifecycle"
 	"github.com/exanubes/appsync/internal/app/usecases/publish"
 	"github.com/exanubes/appsync/internal/app/usecases/subscribe"
 	"github.com/exanubes/appsync/internal/composition"
+	"github.com/exanubes/appsync/internal/infrastructure/authorizer"
 	"github.com/exanubes/appsync/internal/infrastructure/events"
 )
 
@@ -38,14 +40,22 @@ func (client *appsync_client) Subscribe(ctx context.Context, input SubscribeComm
 		return nil, err
 	}
 
+	var authz app.RequestAuthorizer
+	if input.Authorizer != nil {
+		authz = authorizer.NewInternalAdapter(input.Authorizer)
+	}
+
 	frame := &events.FrameBuilder{}
 	result, err := client.usecases.Subscribe.Execute(ctx, subscribe.SubscribeCommandInput{
-		Channel: input.Channel,
-		Frame:   frame,
+		Channel:    input.Channel,
+		Frame:      frame,
+		Authorizer: authz,
 	})
+
 	if err != nil {
 		return nil, err
 	}
+
 	return &channel_subscription{
 		id:           result.SubID,
 		subscription: result.Subscription,

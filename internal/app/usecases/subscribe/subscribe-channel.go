@@ -27,8 +27,13 @@ func NewSubscribeChannelUsecase(
 }
 
 func (usecase *SubscribeChannelUseCase) Execute(ctx context.Context, input SubscribeCommandInput) (*SubscribeCommandOutput, error) {
+	authorizer := usecase.authorizer
 
-	signature, err := usecase.authorizer.Authorize(ctx, app.AuthorizeCommandInput{
+	if input.Authorizer != nil {
+		authorizer = input.Authorizer
+	}
+
+	signature, err := authorizer.Authorize(ctx, app.AuthorizeCommandInput{
 		Channel: input.Channel,
 	})
 
