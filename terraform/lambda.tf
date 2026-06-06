@@ -1,3 +1,8 @@
+resource "aws_cloudwatch_log_group" "authorizer" {
+  name              = "/aws/lambda/${local.name_prefix}-authorizer"
+  retention_in_days = 1
+}
+
 resource "aws_lambda_function" "authorizer" {
   function_name    = "${local.name_prefix}-authorizer"
   role             = aws_iam_role.authorizer.arn
@@ -6,6 +11,11 @@ resource "aws_lambda_function" "authorizer" {
   handler          = "bootstrap"
   runtime          = "provided.al2023"
   architectures    = ["arm64"]
+
+  logging_config {
+    log_format = "Text"
+    log_group  = aws_cloudwatch_log_group.authorizer.name
+  }
 
   environment {
     variables = {
