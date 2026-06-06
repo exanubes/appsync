@@ -5,6 +5,7 @@ package e2e_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -141,6 +142,60 @@ func TestAppSyncAuthorizers(t *testing.T) {
 				t.Fatalf("message payload mismatch\nwant: %s\n got: %s", payload, message.Data)
 			}
 		})
+	}
+}
+
+func TestSuccessfulUnsubscribe(t *testing.T) {
+	http_endpoint := require_env(t, "APPSYNC_E2E_HTTP_ENDPOINT")
+	ws_endpoint := require_env(t, "APPSYNC_E2E_WS_ENDPOINT")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	authz, err := authorizer.ApiKey(authorizer.ApiKeyAuthorizerConfig{
+		ApiKey:   require_env(t, "APPSYNC_E2E_API_KEY"),
+		Endpoint: http_endpoint,
+	})
+	if err != nil {
+		t.Fatalf("create authorizer: %v", err)
+	}
+
+	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
+		Endpoint:     ws_endpoint,
+		Subprotocols: []string{appsync.ProtocolEvents},
+		Authorizer:   authz,
+	})
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer func() {
+		close_ctx, close_cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer close_cancel()
+		if err := client.Close(close_ctx); err != nil {
+			t.Logf("client close: %v", err)
+		}
+	}()
+
+	namespace := require_env(t, "APPSYNC_E2E_NS_API_KEY")
+	channel := fmt.Sprintf("%s/test-%d", namespace, time.Now().UnixNano())
+
+	sub, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
+		Channel: channel,
+	})
+	if err != nil {
+		t.Fatalf("subscribe: %v", err)
+	}
+
+	close_ctx, close_cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer close_cancel()
+
+	if err := sub.Close(close_ctx); err != nil {
+		t.Fatalf("unsubscribe: %v", err)
+	}
+
+	_, err = sub.Next(ctx)
+	if !errors.Is(err, appsync.ErrSubscriptionClosed) {
+		t.Fatalf("expected ErrSubscriptionClosed after unsubscribe, got: %v", err)
 	}
 }
 

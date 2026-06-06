@@ -37,9 +37,9 @@ func NewUseCases(authorizer app.RequestAuthorizer,
 	subscriptions_registry := subscription.NewRegistry()
 	create_subscription_service := sub_service.NewCreateSubscriptionService(subscriptions_registry, subscription_backpressure)
 	send_request_service := request.NewSendRequestService(egress, pending)
-	unsubscribe_service := sub_service.NewUnsubscribeService(subscriptions_registry,
+	unsubscribe_service := sub_service.NewUnsubscribeService(
+		subscriptions_registry,
 		send_request_service,
-		authorizer,
 		events.FrameBuilderFactory{},
 	)
 
