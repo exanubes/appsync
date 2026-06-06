@@ -23,7 +23,13 @@ func NewPublishMessageUsecase(
 }
 
 func (usecase *PublishMessageUsecase) Publish(ctx context.Context, input PublishCommandInput) error {
-	signature, err := usecase.authorizer.Authorize(ctx, app.AuthorizeCommandInput{
+	authorizer := usecase.authorizer
+
+	if input.Authorizer != nil {
+		authorizer = input.Authorizer
+	}
+
+	signature, err := authorizer.Authorize(ctx, app.AuthorizeCommandInput{
 		Channel: input.Destination,
 		Payload: input.Payload,
 	})

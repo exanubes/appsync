@@ -11,6 +11,7 @@ type PublishCommandInput struct {
 	Destination string
 	Payload     app.Payload
 	Frame       app.FrameBuilder
+	Authorizer  app.RequestAuthorizer
 }
 
 type PublishMessage interface {

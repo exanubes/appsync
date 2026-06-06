@@ -27,10 +27,16 @@ func (client *appsync_client) Publish(ctx context.Context, input PublishCommandI
 
 	frame := &events.FrameBuilder{}
 
+	var authz app.RequestAuthorizer
+	if input.Authorizer != nil {
+		authz = authorizer.NewInternalAdapter(input.Authorizer)
+	}
+
 	err := client.usecases.Publish.Publish(ctx, publish.PublishCommandInput{
 		Destination: input.Channel,
 		Payload:     input.Payload,
 		Frame:       frame,
+		Authorizer:  authz,
 	})
 	return err
 }

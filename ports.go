@@ -27,8 +27,9 @@ type Backpressure struct {
 }
 
 type PublishCommandInput struct {
-	Channel string
-	Payload []byte
+	Channel    string
+	Payload    []byte
+	Authorizer authorizer.Authorizer
 }
 
 type SubscribeCommandInput struct {

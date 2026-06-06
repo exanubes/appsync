@@ -57,14 +57,15 @@ func TestPublish(t *testing.T) {
 	destination := "test-channel"
 
 	tests := []struct {
-		name             string
-		authorizer       *mock_authorizer
-		sender           *mock_sender
-		expect_err       error
-		expect_send      bool
-		expect_payload   app.Payload
-		expect_channel   string
-		expect_signature app.Signature
+		name                string
+		authorizer          *mock_authorizer
+		override_authorizer *mock_authorizer
+		sender              *mock_sender
+		expect_err          error
+		expect_send         bool
+		expect_payload      app.Payload
+		expect_channel      string
+		expect_signature    app.Signature
 	}{
 		{
 			name:             "success",
@@ -84,6 +85,17 @@ func TestPublish(t *testing.T) {
 			expect_send: false,
 		},
 		{
+			name:                "override authorizer is used instead of default",
+			authorizer:          &mock_authorizer{err: auth_err},
+			override_authorizer: &mock_authorizer{signature: app.Signature{"Authorization": "override-sig"}},
+			sender:              &mock_sender{},
+			expect_err:          nil,
+			expect_send:         true,
+			expect_payload:      payload,
+			expect_channel:      destination,
+			expect_signature:    app.Signature{"Authorization": "override-sig"},
+		},
+		{
 			name:             "writer error is returned",
 			authorizer:       &mock_authorizer{signature: signature},
 			sender:           &mock_sender{err: send_err},
@@ -100,10 +112,15 @@ func TestPublish(t *testing.T) {
 			frame := &mockFrameBuilder{built_frame: mock_frame{}}
 			usecase := publish.NewPublishMessageUsecase(tt.authorizer, tt.sender)
 
+			var override_authorizer app.RequestAuthorizer
+			if tt.override_authorizer != nil {
+				override_authorizer = tt.override_authorizer
+			}
 			err := usecase.Publish(context.Background(), publish.PublishCommandInput{
 				Destination: destination,
 				Payload:     payload,
 				Frame:       frame,
+				Authorizer:  override_authorizer,
 			})
 
 			if !errors.Is(err, tt.expect_err) {
