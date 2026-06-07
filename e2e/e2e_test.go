@@ -92,7 +92,7 @@ func TestAppSyncAuthorizers(t *testing.T) {
 			client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 				Endpoint:     ws_endpoint,
 				Subprotocols: []string{appsync.ProtocolEvents},
-				Authorizer:   authz,
+				Authorizers:  appsync.Authorizers{Default: authz},
 			})
 			if err != nil {
 				t.Fatalf("connect: %v", err)
@@ -163,7 +163,7 @@ func TestSuccessfulUnsubscribe(t *testing.T) {
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     ws_endpoint,
 		Subprotocols: []string{appsync.ProtocolEvents},
-		Authorizer:   authz,
+		Authorizers:  appsync.Authorizers{Default: authz},
 	})
 	if err != nil {
 		t.Fatalf("connect: %v", err)
@@ -217,7 +217,7 @@ func TestInvalidApiKeyCannotConnect(t *testing.T) {
 	_, err = appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     ws_endpoint,
 		Subprotocols: []string{appsync.ProtocolEvents},
-		Authorizer:   authz,
+		Authorizers:  appsync.Authorizers{Default: authz},
 	})
 
 	if err == nil {

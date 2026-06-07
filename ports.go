@@ -10,8 +10,6 @@ import (
 type ConnectionOptions struct {
 	Endpoint     string
 	Subprotocols []string
-	// @deprecated
-	Authorizer   authorizer.Authorizer
 	Authorizers  Authorizers
 	Backpressure Backpressure
 }

@@ -41,7 +41,7 @@ func main() {
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     wsEndpoint,
 		Subprotocols: []string{appsync.ProtocolEvents},
-		Authorizer:   authz,
+		Authorizers: appsync.Authorizers{Default: authz},
 	})
 	if err != nil {
 		log.Fatal(err)

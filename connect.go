@@ -181,9 +181,7 @@ func Connect(ctx context.Context, options ConnectionOptions) (Client, error) {
 	builder := new_builder()
 
 	builder.
-		WithAuthorizers(Authorizers{
-			Default: options.Authorizer,
-		}).
+		WithAuthorizers(options.Authorizers).
 		WithEndpoint(options.Endpoint).
 		WithSubprotocol(options.Subprotocols...).
 		WithBackpressure(options.Backpressure)

@@ -22,7 +22,7 @@ func ExampleApiKey() {
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     "wss://xxxxxxxxxxxxxxxxxxxx.appsync-realtime-api.us-east-1.amazonaws.com",
 		Subprotocols: []string{appsync.ProtocolEvents},
-		Authorizer:   authz,
+		Authorizers: appsync.Authorizers{Default: authz},
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -44,7 +44,7 @@ func ExampleIAM() {
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     "wss://xxxxxxxxxxxxxxxxxxxx.appsync-realtime-api.us-east-1.amazonaws.com",
 		Subprotocols: []string{appsync.ProtocolEvents},
-		Authorizer:   authz,
+		Authorizers: appsync.Authorizers{Default: authz},
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -67,7 +67,7 @@ func ExampleToken() {
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     "wss://xxxxxxxxxxxxxxxxxxxx.appsync-realtime-api.us-east-1.amazonaws.com",
 		Subprotocols: []string{appsync.ProtocolEvents},
-		Authorizer:   authz,
+		Authorizers: appsync.Authorizers{Default: authz},
 	})
 	if err != nil {
 		log.Fatal(err)
