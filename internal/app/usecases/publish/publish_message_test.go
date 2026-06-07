@@ -58,7 +58,7 @@ func TestPublish(t *testing.T) {
 
 	tests := []struct {
 		name                string
-		authorizer          *mock_authorizer
+		authorizer          app.RequestAuthorizer
 		override_authorizer *mock_authorizer
 		sender              *mock_sender
 		expect_err          error
@@ -104,6 +104,24 @@ func TestPublish(t *testing.T) {
 			expect_payload:   payload,
 			expect_channel:   destination,
 			expect_signature: signature,
+		},
+		{
+			name:        "nil authorizer returns error",
+			authorizer:  nil,
+			sender:      &mock_sender{},
+			expect_err:  app.ErrPublishAuthorizerMissing,
+			expect_send: false,
+		},
+		{
+			name:                "override authorizer used when default is nil",
+			authorizer:          nil,
+			override_authorizer: &mock_authorizer{signature: signature},
+			sender:              &mock_sender{},
+			expect_err:          nil,
+			expect_send:         true,
+			expect_payload:      payload,
+			expect_channel:      destination,
+			expect_signature:    signature,
 		},
 	}
 

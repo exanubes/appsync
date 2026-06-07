@@ -59,17 +59,19 @@ func (m *mock_frame_builder) Build() app.Frame                   { return m.buil
 
 type mock_create_subscription struct {
 	sub   *subscription.Subscription
+	err   error
 	input sub_service.CreateSubscriptionInput
 }
 
 func (m *mock_create_subscription) Create(input sub_service.CreateSubscriptionInput) (*subscription.Subscription, error) {
 	m.input = input
-	return m.sub, nil
+	return m.sub, m.err
 }
 
 func TestSubscribeChannel(t *testing.T) {
 	auth_err := errors.New("auth failed")
 	send_err := errors.New("send failed")
+	sub_err := errors.New("subscription failed")
 	signature := app.Signature{"Authorization": "sig-value"}
 	channel := "test-channel"
 	frame_id := "test-id"
@@ -77,7 +79,7 @@ func TestSubscribeChannel(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		authorizer       *mock_authorizer
+		authorizer       app.RequestAuthorizer
 		sender           *mock_sender
 		create_sub       *mock_create_subscription
 		input_authorizer *mock_authorizer
@@ -126,6 +128,33 @@ func TestSubscribeChannel(t *testing.T) {
 			expect_type:      protocol.TypeSubscribe,
 			expect_channel:   channel,
 			expect_sig:       signature,
+		},
+		{
+			name:       "nil authorizer returns error",
+			authorizer: nil,
+			sender:     &mock_sender{},
+			create_sub: &mock_create_subscription{},
+			expect_err: app.ErrSubscribeAuthorizerMissing,
+		},
+		{
+			name:             "override authorizer used when default is nil",
+			authorizer:       nil,
+			sender:           &mock_sender{},
+			create_sub:       &mock_create_subscription{sub: sub},
+			input_authorizer: &mock_authorizer{signature: signature},
+			expect_err:       nil,
+			expect_sub_id:    frame_id,
+			expect_sub:       sub,
+			expect_type:      protocol.TypeSubscribe,
+			expect_channel:   channel,
+			expect_sig:       signature,
+		},
+		{
+			name:       "subscription creation error",
+			authorizer: &mock_authorizer{signature: signature},
+			sender:     &mock_sender{},
+			create_sub: &mock_create_subscription{err: sub_err},
+			expect_err: sub_err,
 		},
 	}
 
@@ -189,7 +218,7 @@ func TestSubscribeChannel(t *testing.T) {
 				if !tt.input_authorizer.called {
 					t.Error("expected override authorizer to be called, but it was not")
 				}
-				if tt.authorizer.called {
+				if defaultMock, ok := tt.authorizer.(*mock_authorizer); ok && defaultMock.called {
 					t.Error("expected default authorizer not to be called, but it was")
 				}
 			}

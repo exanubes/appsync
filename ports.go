@@ -32,7 +32,7 @@ func (authz *Authorizers) connect() authorizer.Authorizer {
 }
 
 func (authz *Authorizers) publish() authorizer.Authorizer {
-	if authz.Connect != nil {
+	if authz.Publish != nil {
 		return authz.Publish
 	}
 
@@ -40,7 +40,7 @@ func (authz *Authorizers) publish() authorizer.Authorizer {
 }
 
 func (authz *Authorizers) subscribe() authorizer.Authorizer {
-	if authz.Connect != nil {
+	if authz.Subscribe != nil {
 		return authz.Subscribe
 	}
 

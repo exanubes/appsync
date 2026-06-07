@@ -225,6 +225,233 @@ func TestInvalidApiKeyCannotConnect(t *testing.T) {
 	}
 }
 
+func TestPerRequestAuthorizerOverride(t *testing.T) {
+	http_endpoint := require_env(t, "APPSYNC_E2E_HTTP_ENDPOINT")
+	ws_endpoint := require_env(t, "APPSYNC_E2E_WS_ENDPOINT")
+	aws_region := require_env(t, "AWS_REGION")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	apiKey, err := authorizer.ApiKey(authorizer.ApiKeyAuthorizerConfig{
+		ApiKey:   require_env(t, "APPSYNC_E2E_API_KEY"),
+		Endpoint: http_endpoint,
+	})
+	if err != nil {
+		t.Fatalf("create api_key authorizer: %v", err)
+	}
+
+	iam, err := authorizer.IAM(authorizer.IAMAuthorizerConfig{
+		Region:   aws_region,
+		Endpoint: http_endpoint,
+	})
+	if err != nil {
+		t.Fatalf("create iam authorizer: %v", err)
+	}
+
+	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
+		Endpoint:     ws_endpoint,
+		Subprotocols: []string{appsync.ProtocolEvents},
+		Authorizers:  appsync.Authorizers{Default: apiKey},
+	})
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer func() {
+		close_ctx, close_cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer close_cancel()
+		if err := client.Close(close_ctx); err != nil {
+			t.Logf("client close: %v", err)
+		}
+	}()
+
+	namespace := require_env(t, "APPSYNC_E2E_NS_IAM")
+	channel := fmt.Sprintf("%s/test-%d", namespace, time.Now().UnixNano())
+	payload := []byte(`{"test":"per_request_override"}`)
+
+	sub, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
+		Channel:    channel,
+		Authorizer: iam,
+	})
+	if err != nil {
+		t.Fatalf("subscribe: %v", err)
+	}
+	defer func() {
+		close_ctx, close_cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer close_cancel()
+		if err := sub.Close(close_ctx); err != nil {
+			t.Logf("subscription close: %v", err)
+		}
+	}()
+
+	if err := client.Publish(ctx, appsync.PublishCommandInput{
+		Channel:    channel,
+		Payload:    payload,
+		Authorizer: iam,
+	}); err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+
+	message, err := sub.Next(ctx)
+	if err != nil {
+		t.Fatalf("next message: %v", err)
+	}
+
+	if !bytes.Equal(message.Data, payload) {
+		t.Fatalf("message payload mismatch\nwant: %s\n got: %s", payload, message.Data)
+	}
+}
+
+func TestConnectionSpecificAuthorizers(t *testing.T) {
+	http_endpoint := require_env(t, "APPSYNC_E2E_HTTP_ENDPOINT")
+	ws_endpoint := require_env(t, "APPSYNC_E2E_WS_ENDPOINT")
+	aws_region := require_env(t, "AWS_REGION")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	iam, err := authorizer.IAM(authorizer.IAMAuthorizerConfig{
+		Region:   aws_region,
+		Endpoint: http_endpoint,
+	})
+	if err != nil {
+		t.Fatalf("create iam authorizer: %v", err)
+	}
+
+	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
+		Endpoint:     ws_endpoint,
+		Subprotocols: []string{appsync.ProtocolEvents},
+		Authorizers: appsync.Authorizers{
+			Connect:   iam,
+			Subscribe: iam,
+			Publish:   iam,
+		},
+	})
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer func() {
+		close_ctx, close_cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer close_cancel()
+		if err := client.Close(close_ctx); err != nil {
+			t.Logf("client close: %v", err)
+		}
+	}()
+
+	namespace := require_env(t, "APPSYNC_E2E_NS_IAM")
+	channel := fmt.Sprintf("%s/test-%d", namespace, time.Now().UnixNano())
+	payload := []byte(`{"test":"connection_specific_authorizers"}`)
+
+	sub, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
+		Channel: channel,
+	})
+	if err != nil {
+		t.Fatalf("subscribe: %v", err)
+	}
+	defer func() {
+		close_ctx, close_cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer close_cancel()
+		if err := sub.Close(close_ctx); err != nil {
+			t.Logf("subscription close: %v", err)
+		}
+	}()
+
+	if err := client.Publish(ctx, appsync.PublishCommandInput{
+		Channel: channel,
+		Payload: payload,
+	}); err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+
+	message, err := sub.Next(ctx)
+	if err != nil {
+		t.Fatalf("next message: %v", err)
+	}
+
+	if !bytes.Equal(message.Data, payload) {
+		t.Fatalf("message payload mismatch\nwant: %s\n got: %s", payload, message.Data)
+	}
+}
+
+func TestMixedConnectionLevelAuthorizers(t *testing.T) {
+	http_endpoint := require_env(t, "APPSYNC_E2E_HTTP_ENDPOINT")
+	ws_endpoint := require_env(t, "APPSYNC_E2E_WS_ENDPOINT")
+	aws_region := require_env(t, "AWS_REGION")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	apiKey, err := authorizer.ApiKey(authorizer.ApiKeyAuthorizerConfig{
+		ApiKey:   require_env(t, "APPSYNC_E2E_API_KEY"),
+		Endpoint: http_endpoint,
+	})
+	if err != nil {
+		t.Fatalf("create api_key authorizer: %v", err)
+	}
+
+	iam, err := authorizer.IAM(authorizer.IAMAuthorizerConfig{
+		Region:   aws_region,
+		Endpoint: http_endpoint,
+	})
+	if err != nil {
+		t.Fatalf("create iam authorizer: %v", err)
+	}
+
+	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
+		Endpoint:     ws_endpoint,
+		Subprotocols: []string{appsync.ProtocolEvents},
+		Authorizers: appsync.Authorizers{
+			Connect:   iam,
+			Subscribe: apiKey,
+			Publish:   apiKey,
+		},
+	})
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer func() {
+		close_ctx, close_cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer close_cancel()
+		if err := client.Close(close_ctx); err != nil {
+			t.Logf("client close: %v", err)
+		}
+	}()
+
+	namespace := require_env(t, "APPSYNC_E2E_NS_API_KEY")
+	channel := fmt.Sprintf("%s/test-%d", namespace, time.Now().UnixNano())
+	payload := []byte(`{"test":"mixed_connection_level_authorizers"}`)
+
+	sub, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
+		Channel: channel,
+	})
+	if err != nil {
+		t.Fatalf("subscribe: %v", err)
+	}
+	defer func() {
+		close_ctx, close_cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer close_cancel()
+		if err := sub.Close(close_ctx); err != nil {
+			t.Logf("subscription close: %v", err)
+		}
+	}()
+
+	if err := client.Publish(ctx, appsync.PublishCommandInput{
+		Channel: channel,
+		Payload: payload,
+	}); err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+
+	message, err := sub.Next(ctx)
+	if err != nil {
+		t.Fatalf("next message: %v", err)
+	}
+
+	if !bytes.Equal(message.Data, payload) {
+		t.Fatalf("message payload mismatch\nwant: %s\n got: %s", payload, message.Data)
+	}
+}
+
 func require_env(t *testing.T, key string) string {
 	t.Helper()
 
