@@ -19,6 +19,7 @@ and authorizing requests with API key, IAM, Lambda authorizer, Cognito User Pool
   - [API key](#api-key)
   - [IAM](#iam)
   - [Token-based authorization](#token-based-authorization)
+- [Authorizers](#authorizers)
 - [Publishing events](#publishing-events)
 - [Subscribing to events](#subscribing-to-events)
 - [Closing resources](#closing-resources)
@@ -109,7 +110,7 @@ func publish(ctx context.Context) error {
 	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 		Endpoint:     wsEndpoint,
 		Subprotocols: []string{appsync.ProtocolEvents},
-		Authorizer:   authz,
+		Authorizers:  appsync.Authorizers{Default: authz},
 	})
 	if err != nil {
 		return err
@@ -197,6 +198,75 @@ authz, err := authorizer.Token(authorizer.TokenAuthorizerConfig{
 })
 ```
 
+## Authorizers
+
+`ConnectionOptions.Authorizers` controls which authorizer is used for each operation type.
+
+```go
+type Authorizers struct {
+    Default   authorizer.Authorizer
+    Connect   authorizer.Authorizer
+    Publish   authorizer.Authorizer
+    Subscribe authorizer.Authorizer
+}
+```
+
+Fallback resolution: if a specific field (`Connect`, `Publish`, or `Subscribe`) is `nil`, `Default` is used.
+
+**Single authorizer for all operations (most common):**
+
+```go
+client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
+    Endpoint:     wsEndpoint,
+    Subprotocols: []string{appsync.ProtocolEvents},
+    Authorizers:  appsync.Authorizers{Default: authz},
+})
+```
+
+**Different authorizers per operation:**
+
+```go
+client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
+    Endpoint:     wsEndpoint,
+    Subprotocols: []string{appsync.ProtocolEvents},
+    Authorizers: appsync.Authorizers{
+        Connect:   connectAuthz,
+        Publish:   publishAuthz,
+        Subscribe: subscribeAuthz,
+    },
+})
+```
+
+**Subscribe-only or publish-only clients:**
+
+Authorizers for `Publish` and `Subscribe` are resolved at the point of use. If an operation is never called, its authorizer never needs to be configured. This makes it possible to follow the principle of least privilege by omitting `Default` and only configuring the authorizer for the operations the client actually uses.
+
+Subscribe-only client — no publish authorizer configured:
+
+```go
+client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
+    Endpoint:     wsEndpoint,
+    Subprotocols: []string{appsync.ProtocolEvents},
+    Authorizers: appsync.Authorizers{
+        Connect:   connectAuthz,
+        Subscribe: subscribeAuthz,
+    },
+})
+```
+
+Publish-only client — no subscribe authorizer configured:
+
+```go
+client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
+    Endpoint:     wsEndpoint,
+    Subprotocols: []string{appsync.ProtocolEvents},
+    Authorizers: appsync.Authorizers{
+        Connect:  connectAuthz,
+        Publish:  publishAuthz,
+    },
+})
+```
+
 ## Publishing events
 
 `Publish` sends a payload to a channel.
@@ -216,6 +286,16 @@ if err != nil {
 `Payload` is a raw byte slice. The library does not require a Go struct, but AppSync event payloads are commonly JSON. 
 If you want structured data, marshal it before publishing.
 
+The optional `Authorizer` field overrides `Authorizers.Publish` for a single call:
+
+```go
+err := client.Publish(ctx, appsync.PublishCommandInput{
+    Channel:    "default/notifications",
+    Payload:    payload,
+    Authorizer: perRequestAuthz,
+})
+```
+
 ## Subscribing to events
 
 Use `Subscribe` to create a channel subscription.
@@ -228,6 +308,15 @@ if err != nil {
     return err
 }
 defer sub.Close(context.Background())
+```
+
+The optional `Authorizer` field overrides `Authorizers.Subscribe` for a single call:
+
+```go
+sub, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
+    Channel:    "default/notifications",
+    Authorizer: perRequestAuthz,
+})
 ```
 
 Read event messages with `Next`:
@@ -371,7 +460,7 @@ if err != nil {
 client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
     Endpoint:     wsEndpoint,
     Subprotocols: []string{appsync.ProtocolEvents},
-    Authorizer:   authz,
+    Authorizers:  appsync.Authorizers{Default: authz},
 })
 ```
 
@@ -408,7 +497,7 @@ For connection and unsubscribe calls, `input.Channel` is empty and `input.Payloa
 client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
     Endpoint:     wsEndpoint,
     Subprotocols: []string{appsync.ProtocolEvents},
-    Authorizer:   authz,
+    Authorizers:  appsync.Authorizers{Default: authz},
     Backpressure: appsync.Backpressure{
         ConnectionInbound:  100,
         ConnectionOutbound: 100,
@@ -481,14 +570,7 @@ Runnable examples are available in:
 - [`examples/iam`](examples/iam)
 - [`examples/token`](examples/token)
 - [`examples/custom-authorizer`](examples/custom-authorizer)
-
-## Limitations
-
-A `Client` uses one authorizer for the entire connection lifecycle.
-
-The same authorizer is used to establish the WebSocket connection and to authorize
-`subscribe`, `publish`, and `unsubscribe` messages. Using different authorizers for
-connection setup and individual operation messages is not currently supported.
+- [`examples/multi-authorizer`](examples/multi-authorizer)
 
 ## Tips
 
@@ -525,7 +607,6 @@ in the future for some reason.
 
 Missing features:
 
-- authorizer per request
 - HTTP Publish
 - Batch Publish 
 - something else I missed probably
