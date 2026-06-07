@@ -10,8 +10,43 @@ import (
 type ConnectionOptions struct {
 	Endpoint     string
 	Subprotocols []string
+	// @deprecated
 	Authorizer   authorizer.Authorizer
+	Authorizers  Authorizers
 	Backpressure Backpressure
+}
+
+// Authorizers configure Appsync authorizers for connect, publish and subscribe actions.
+// Specify a Default authorizer for an automated fallback authorizer
+type Authorizers struct {
+	Default   authorizer.Authorizer
+	Connect   authorizer.Authorizer
+	Publish   authorizer.Authorizer
+	Subscribe authorizer.Authorizer
+}
+
+func (authz *Authorizers) connect() authorizer.Authorizer {
+	if authz.Connect != nil {
+		return authz.Connect
+	}
+
+	return authz.Default
+}
+
+func (authz *Authorizers) publish() authorizer.Authorizer {
+	if authz.Connect != nil {
+		return authz.Publish
+	}
+
+	return authz.Default
+}
+
+func (authz *Authorizers) subscribe() authorizer.Authorizer {
+	if authz.Connect != nil {
+		return authz.Subscribe
+	}
+
+	return authz.Default
 }
 
 // Backpressure controls the internal channel buffer sizes.

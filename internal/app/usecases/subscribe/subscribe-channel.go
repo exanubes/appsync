@@ -27,10 +27,10 @@ func NewSubscribeChannelUsecase(
 }
 
 func (usecase *SubscribeChannelUseCase) Execute(ctx context.Context, input SubscribeCommandInput) (*SubscribeCommandOutput, error) {
-	authorizer := usecase.authorizer
+	authorizer := input.resolve_authorizer(usecase.authorizer)
 
-	if input.Authorizer != nil {
-		authorizer = input.Authorizer
+	if authorizer == nil {
+		return nil, app.ErrSubscribeAuthorizerMissing
 	}
 
 	signature, err := authorizer.Authorize(ctx, app.AuthorizeCommandInput{

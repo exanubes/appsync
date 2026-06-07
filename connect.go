@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/url"
 
-	"github.com/exanubes/appsync/authorizer"
 	"github.com/exanubes/appsync/internal/app"
 	"github.com/exanubes/appsync/internal/app/engine"
 	"github.com/exanubes/appsync/internal/app/heartbeat"
@@ -27,9 +26,9 @@ import (
 )
 
 type builder struct {
-	errors       []error
+	errors       error
 	endpoint     *url.URL
-	authorizer   authorizer.Authorizer
+	authorizers  Authorizers
 	subprotocols []string
 	logger       app.Logger
 	backpressure Backpressure
@@ -54,7 +53,7 @@ func (builder *builder) WithEndpoint(endpoint string) *builder {
 	ws_endpoint, err := url.Parse(endpoint)
 
 	if err != nil {
-		builder.errors = append(builder.errors, err)
+		builder.errors = errors.Join(builder.errors, err)
 	}
 
 	builder.endpoint = ws_endpoint
@@ -62,15 +61,10 @@ func (builder *builder) WithEndpoint(endpoint string) *builder {
 	return builder
 }
 
-// Sets authorizer
+// Sets authorizers
 // Options: IAM, Lambda, Open ID Connect, Cognito User Pool, API Key
-func (builder *builder) WithAuthorizer(authz authorizer.Authorizer) *builder {
-	if authz == nil {
-		builder.errors = append(builder.errors, errors.New("Authorizer can't be nil"))
-		return builder
-	}
-
-	builder.authorizer = authz
+func (builder *builder) WithAuthorizers(authorizers Authorizers) *builder {
+	builder.authorizers = authorizers
 
 	return builder
 }
@@ -109,20 +103,24 @@ func (builder *builder) WithBackpressure(config Backpressure) *builder {
 
 // Validates inputs and creates a websocket connection
 func (builder *builder) Connect(ctx context.Context) (*appsync_client, error) {
-	if len(builder.errors) != 0 {
-		return nil, errors.Join(builder.errors...)
+	if builder.errors != nil {
+		return nil, builder.errors
 	}
 
-	if builder.authorizer == nil {
+	if builder.authorizers.connect() == nil {
 		return nil, errors.New("Authorizer is required")
 	}
 
 	dialer := transport.New()
 	msg_codec := codec.New()
 	base64_serializer := serializer.New()
-	request_authorizer := infra_authorizer.NewInternalAdapter(builder.authorizer)
-	generate_subprotocol_service := connection.NewGenerateSubprotocolService(request_authorizer, base64_serializer)
-	authorize_connection_service := connection.NewAuthorizeConnectionService(msg_codec, request_authorizer, builder.logger)
+
+	connect_authorizer := infra_authorizer.NewInternalAdapter(builder.authorizers.connect())
+	subscribe_authorizer := infra_authorizer.NewInternalAdapter(builder.authorizers.subscribe())
+	publish_authorizer := infra_authorizer.NewInternalAdapter(builder.authorizers.publish())
+
+	generate_subprotocol_service := connection.NewGenerateSubprotocolService(connect_authorizer, base64_serializer)
+	authorize_connection_service := connection.NewAuthorizeConnectionService(msg_codec, connect_authorizer, builder.logger)
 	create_connection_service := connection.NewConnectionService(dialer, authorize_connection_service, generate_subprotocol_service, builder.logger)
 
 	connection_output, err := create_connection_service.Connect(ctx, connection.CreateConnectionInput{
@@ -142,11 +140,12 @@ func (builder *builder) Connect(ctx context.Context) (*appsync_client, error) {
 	pending_registry := pending.NewRegistry(connection_state)
 	io_loops := io.New(ingress_queue, egress_queue, connection_output.Connection, msg_codec)
 	usecases, services := composition.NewUseCases(
-		request_authorizer,
 		ingress_queue,
 		egress_queue,
 		pending_registry,
 		builder.backpressure.SubscriptionEvents,
+		subscribe_authorizer,
+		publish_authorizer,
 	)
 
 	msg_router := router.New(pending_registry, usecases.ReceiveData)
@@ -182,7 +181,9 @@ func Connect(ctx context.Context, options ConnectionOptions) (Client, error) {
 	builder := new_builder()
 
 	builder.
-		WithAuthorizer(options.Authorizer).
+		WithAuthorizers(Authorizers{
+			Default: options.Authorizer,
+		}).
 		WithEndpoint(options.Endpoint).
 		WithSubprotocol(options.Subprotocols...).
 		WithBackpressure(options.Backpressure)

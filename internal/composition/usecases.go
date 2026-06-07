@@ -28,11 +28,13 @@ type Services struct {
 	RemoveSubscriptions   *sub_service.RemoveSubscriptionsService
 }
 
-func NewUseCases(authorizer app.RequestAuthorizer,
+func NewUseCases(
 	ingress *queue.IngressQueue,
 	egress *queue.EgressQueue,
 	pending *pending.Registry,
 	subscription_backpressure uint,
+	subscribe_authorizer app.RequestAuthorizer,
+	publish_authorizer app.RequestAuthorizer,
 ) (*UseCases, *Services) {
 	subscriptions_registry := subscription.NewRegistry()
 	create_subscription_service := sub_service.NewCreateSubscriptionService(subscriptions_registry, subscription_backpressure)
@@ -47,8 +49,9 @@ func NewUseCases(authorizer app.RequestAuthorizer,
 		unsubscribe_service,
 	)
 
-	publish_usecase := publish.NewPublishMessageUsecase(authorizer, send_request_service)
-	subscribe_usecase := subscribe.NewSubscribeChannelUsecase(authorizer, send_request_service, create_subscription_service)
+	//TODO: if publish/subscribe authorizer is nil, decorate it with a different use case that will require user to pass the Authorizer override in command input
+	publish_usecase := publish.NewPublishMessageUsecase(publish_authorizer, send_request_service)
+	subscribe_usecase := subscribe.NewSubscribeChannelUsecase(subscribe_authorizer, send_request_service, create_subscription_service)
 	unsubscribe_usecase := unsubscribe.NewUnsubscribeChannelUsecase(unsubscribe_service)
 	receive_data_usecase := data.NewReceiveDataUsecase(subscriptions_registry)
 	return &UseCases{

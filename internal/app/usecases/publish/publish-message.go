@@ -23,10 +23,10 @@ func NewPublishMessageUsecase(
 }
 
 func (usecase *PublishMessageUsecase) Publish(ctx context.Context, input PublishCommandInput) error {
-	authorizer := usecase.authorizer
+	authorizer := input.resolve_authorizer(usecase.authorizer)
 
-	if input.Authorizer != nil {
-		authorizer = input.Authorizer
+	if authorizer == nil {
+		return app.ErrPublishAuthorizerMissing
 	}
 
 	signature, err := authorizer.Authorize(ctx, app.AuthorizeCommandInput{
