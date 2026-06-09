@@ -28,6 +28,7 @@ type Message any
 
 type Signature map[string]string
 type Payload []byte
+type Batch []Payload
 
 type AuthorizeCommandInput struct {
 	Channel string
@@ -82,4 +83,8 @@ type Timer interface {
 	C() <-chan time.Time
 	Stop() bool
 	Reset(time.Duration)
+}
+
+type Batcher interface {
+	Batch([]Payload) []Batch
 }

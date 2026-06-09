@@ -10,15 +10,18 @@ import (
 type PublishMessageUsecase struct {
 	authorizer app.RequestAuthorizer
 	writer     app.SendMessageService
+	batcher    app.Batcher
 }
 
 func NewPublishMessageUsecase(
 	authorizer app.RequestAuthorizer,
 	writer app.SendMessageService,
+	batcher app.Batcher,
 ) *PublishMessageUsecase {
 	return &PublishMessageUsecase{
 		authorizer: authorizer,
 		writer:     writer,
+		batcher:    batcher,
 	}
 }
 

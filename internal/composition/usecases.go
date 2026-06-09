@@ -4,6 +4,7 @@ import (
 	"github.com/exanubes/appsync/internal/app"
 	"github.com/exanubes/appsync/internal/app/pending"
 	"github.com/exanubes/appsync/internal/app/queue"
+	"github.com/exanubes/appsync/internal/app/services/batcher"
 	"github.com/exanubes/appsync/internal/app/services/request"
 	sub_service "github.com/exanubes/appsync/internal/app/services/subscription"
 	"github.com/exanubes/appsync/internal/app/subscription"
@@ -39,6 +40,7 @@ func NewUseCases(
 	subscriptions_registry := subscription.NewRegistry()
 	create_subscription_service := sub_service.NewCreateSubscriptionService(subscriptions_registry, subscription_backpressure)
 	send_request_service := request.NewSendRequestService(egress, pending)
+	batcher_service := batcher.NewPayloadBatcherService()
 	unsubscribe_service := sub_service.NewUnsubscribeService(
 		subscriptions_registry,
 		send_request_service,
@@ -50,7 +52,7 @@ func NewUseCases(
 	)
 
 	//TODO: if publish/subscribe authorizer is nil, decorate it with a different use case that will require user to pass the Authorizer override in command input
-	publish_usecase := publish.NewPublishMessageUsecase(publish_authorizer, send_request_service)
+	publish_usecase := publish.NewPublishMessageUsecase(publish_authorizer, send_request_service, batcher_service)
 	subscribe_usecase := subscribe.NewSubscribeChannelUsecase(subscribe_authorizer, send_request_service, create_subscription_service)
 	unsubscribe_usecase := unsubscribe.NewUnsubscribeChannelUsecase(unsubscribe_service)
 	receive_data_usecase := data.NewReceiveDataUsecase(subscriptions_registry)

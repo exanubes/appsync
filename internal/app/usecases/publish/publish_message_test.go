@@ -18,6 +18,18 @@ func (mock *mock_authorizer) Authorize(_ context.Context, _ app.AuthorizeCommand
 	return mock.signature, mock.err
 }
 
+type mock_batcher struct {
+	result   []app.Batch
+	called   bool
+	received []app.Payload
+}
+
+func (mock *mock_batcher) Batch(events []app.Payload) []app.Batch {
+	mock.called = true
+	mock.received = events
+	return mock.result
+}
+
 type mock_sender struct {
 	err      error
 	called   bool
@@ -61,6 +73,7 @@ func TestPublish(t *testing.T) {
 		authorizer          app.RequestAuthorizer
 		override_authorizer *mock_authorizer
 		sender              *mock_sender
+		batcher             *mock_batcher
 		expect_err          error
 		expect_send         bool
 		expect_payload      app.Payload
@@ -128,7 +141,7 @@ func TestPublish(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			frame := &mockFrameBuilder{built_frame: mock_frame{}}
-			usecase := publish.NewPublishMessageUsecase(tt.authorizer, tt.sender)
+			usecase := publish.NewPublishMessageUsecase(tt.authorizer, tt.sender, tt.batcher)
 
 			var override_authorizer app.RequestAuthorizer
 			if tt.override_authorizer != nil {
