@@ -40,7 +40,7 @@ func TestDecode(t *testing.T) {
 		{
 			name:       "publish_success message",
 			payload:    []byte(`{"type":"publish_success","id":"sub-1"}`),
-			expect_msg: protocol.SuccessMessage{ID: "sub-1"},
+			expect_msg: protocol.PublishResultMessage{ID: "sub-1", Failures: []protocol.FailedEvent{}},
 		},
 		{
 			name:       "unsubscribe_success message",

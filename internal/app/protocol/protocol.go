@@ -35,3 +35,14 @@ type DataMessage struct {
 	SubId   string
 	Payload app.Payload
 }
+
+type PublishResultMessage struct {
+	ID       string
+	Failures []FailedEvent
+}
+
+type FailedEvent struct {
+	Success    bool
+	Index      int
+	RawMessage []byte
+}

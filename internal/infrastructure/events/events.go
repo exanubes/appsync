@@ -66,3 +66,42 @@ func (event DataEvent) ToProtocol() protocol.DataMessage {
 		Payload: app.Payload(event.Data),
 	}
 }
+
+type PublishResult struct {
+	ID         string    `json:"id"`
+	Type       string    `json:"type"`
+	Successful []Success `json:"successful"`
+	Failed     []Failure `json:"failed"`
+}
+
+type Success struct {
+	ID    string `json:"identifier"`
+	Index int    `json:"index"`
+}
+
+// Best guess, could not find a schema for a failed event item.
+// Raw is used to store the object in its entirety to be able to see the original object
+type Failure struct {
+	ID    string `json:"identifier"`
+	Index int    `json:"index"`
+	Raw   []byte
+}
+
+func (event PublishResult) ToProtocol() protocol.PublishResultMessage {
+	result := make([]protocol.FailedEvent, len(event.Failed))
+	index := 0
+
+	for _, item := range event.Failed {
+		result[index] = protocol.FailedEvent{
+			Success:    false,
+			Index:      item.Index,
+			RawMessage: item.Raw,
+		}
+		index += 1
+	}
+
+	return protocol.PublishResultMessage{
+		ID:       event.ID,
+		Failures: result,
+	}
+}

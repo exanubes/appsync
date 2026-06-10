@@ -34,6 +34,10 @@ func (router *MessageHandler) Handle(ctx context.Context, msg app.Message) error
 	case protocol.SuccessMessage:
 		return router.pending.Fulfill(ctx, msg.ID, nil)
 
+	case protocol.PublishResultMessage:
+		// TODO: When publishing a batch of events, need to be able to return an error per failed event or nil
+		return router.pending.Fulfill(ctx, msg.ID, nil)
+
 	case protocol.DataMessage:
 		return router.receive_use_case.Execute(ctx, msg)
 	}
