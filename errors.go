@@ -1,6 +1,9 @@
 package appsync
 
-import "github.com/exanubes/appsync/internal/app"
+import (
+	"github.com/exanubes/appsync/internal/app"
+	"github.com/exanubes/appsync/internal/app/protocol"
+)
 
 var (
 	ErrEmptyUrl              = app.ErrEmptyUrl
@@ -11,4 +14,5 @@ var (
 	ErrSubscriptionNotFound  = app.ErrSubscriptionNotFound
 	ErrHeartbeatTimeout      = app.ErrHeartbeatTimeout
 	ErrConnectionClosed      = app.ErrConnectionClosed
+	ErrBatchPublishFailed    = protocol.BatchPublishError{}
 )

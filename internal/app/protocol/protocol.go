@@ -1,6 +1,10 @@
 package protocol
 
-import "github.com/exanubes/appsync/internal/app"
+import (
+	"fmt"
+
+	"github.com/exanubes/appsync/internal/app"
+)
 
 type KeepAliveMessage struct{}
 
@@ -45,4 +49,17 @@ type FailedEvent struct {
 	Success    bool
 	Index      int
 	RawMessage []byte
+}
+
+type BatchPublishError struct {
+	Failures []FailedEvent
+}
+
+func (err BatchPublishError) Error() string {
+	return fmt.Sprintf("batch publish failed: %d event(s) rejected", len(err.Failures))
+}
+
+func (err BatchPublishError) Is(target error) bool {
+	_, ok := target.(BatchPublishError)
+	return ok
 }
