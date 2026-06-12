@@ -32,7 +32,7 @@ type Batch []Payload
 
 type AuthorizeCommandInput struct {
 	Channel string
-	Payload []byte
+	Payload Batch
 }
 
 type RequestAuthorizer interface {
@@ -54,6 +54,7 @@ type Inbox interface {
 
 type FrameBuilder interface {
 	WithPayload(Payload) FrameBuilder
+	WithBatch(Batch) FrameBuilder
 	WithChannel(string) FrameBuilder
 	WithSignature(Signature) FrameBuilder
 	WithType(string) FrameBuilder

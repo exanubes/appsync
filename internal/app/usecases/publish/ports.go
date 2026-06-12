@@ -10,8 +10,19 @@ import (
 type PublishCommandInput struct {
 	Destination string
 	Payload     app.Payload
+	Events      []app.Payload
 	Frame       app.FrameBuilder
 	Authorizer  app.RequestAuthorizer
+}
+
+type PublishCommandOutput struct {
+	Failures []FailedEvent
+	Success  bool
+}
+
+type FailedEvent struct {
+	Payload app.Payload
+	Err     error
 }
 
 func (input *PublishCommandInput) resolve_authorizer(authz app.RequestAuthorizer) app.RequestAuthorizer {
@@ -25,7 +36,7 @@ func (input *PublishCommandInput) resolve_authorizer(authz app.RequestAuthorizer
 }
 
 type PublishMessage interface {
-	Publish(context.Context, PublishCommandInput) error
+	Publish(context.Context, PublishCommandInput) (*PublishCommandOutput, error)
 }
 
 type ReceivePublishResult interface {
