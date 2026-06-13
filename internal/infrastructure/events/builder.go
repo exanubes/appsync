@@ -18,10 +18,17 @@ func (FrameBuilderFactory) Unsubscribe() app.FrameBuilder {
 	}
 }
 
+func Publish() app.FrameBuilder {
+	return &FrameBuilder{
+		_type: "publish",
+	}
+}
+
 type FrameBuilder struct {
 	id        string
 	_type     string
 	payload   app.Payload
+	batch     app.Batch
 	channel   string
 	signature app.Signature
 }
@@ -38,6 +45,11 @@ func (builder *FrameBuilder) WithChannel(channel string) app.FrameBuilder {
 
 func (builder *FrameBuilder) WithSignature(signature app.Signature) app.FrameBuilder {
 	builder.signature = signature
+	return builder
+}
+
+func (builder *FrameBuilder) WithBatch(batch app.Batch) app.FrameBuilder {
+	builder.batch = batch
 	return builder
 }
 

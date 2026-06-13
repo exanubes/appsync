@@ -20,25 +20,26 @@ type appsync_client struct {
 	connection *lifecycle.State
 }
 
-func (client *appsync_client) Publish(ctx context.Context, input PublishCommandInput) error {
+func (client *appsync_client) Publish(ctx context.Context, input PublishCommandInput) (*PublishCommandOutput, error) {
 	if err := client.connection.Err(); err != nil {
-		return err
+		return nil, err
 	}
-
-	frame := &events.FrameBuilder{}
 
 	var authz app.RequestAuthorizer
 	if input.Authorizer != nil {
 		authz = authorizer.NewInternalAdapter(input.Authorizer)
 	}
+	var output PublishCommandOutput
 
-	err := client.usecases.Publish.Publish(ctx, publish.PublishCommandInput{
+	result, err := client.usecases.Publish.Publish(ctx, publish.PublishCommandInput{
 		Destination: input.Channel,
 		Payload:     input.Payload,
-		Frame:       frame,
+		Frame:       events.Publish(),
 		Authorizer:  authz,
 	})
-	return err
+
+	output = output.from(result)
+	return &output, err
 }
 
 func (client *appsync_client) Subscribe(ctx context.Context, input SubscribeCommandInput) (Subscription, error) {

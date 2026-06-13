@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/exanubes/appsync/authorizer"
+	"github.com/exanubes/appsync/internal/app/usecases/publish"
 )
 
 // ConnectionOptions configures a WebSocket connection to an Appsync Events API.
@@ -65,6 +66,31 @@ type PublishCommandInput struct {
 	Authorizer authorizer.Authorizer
 }
 
+type PublishCommandOutput struct {
+	Success bool
+	Errors  []FailedEvent
+}
+
+func (output PublishCommandOutput) from(input *publish.PublishCommandOutput) PublishCommandOutput {
+	if input == nil {
+		return output
+	}
+
+	output.Success = input.Success
+	output.Errors = make([]FailedEvent, len(input.Failures))
+
+	for index, event := range input.Failures {
+		output.Errors[index] = FailedEvent{Payload: event.Payload, Err: event.Err}
+	}
+
+	return output
+}
+
+type FailedEvent struct {
+	Payload []byte
+	Err     error
+}
+
 type SubscribeCommandInput struct {
 	Channel    string
 	Authorizer authorizer.Authorizer
@@ -77,7 +103,7 @@ type NextMessageOutput struct {
 // Client is the client-facing API for interacting with an AppSync WebSocket connection.
 type Client interface {
 	// Publish sends a message to a channel
-	Publish(context.Context, PublishCommandInput) error
+	Publish(context.Context, PublishCommandInput) (*PublishCommandOutput, error)
 	// Subscribe to a channel and receive messages published to it
 	Subscribe(context.Context, SubscribeCommandInput) (Subscription, error)
 	// Close the websocket connection and all open subscriptions created on it
