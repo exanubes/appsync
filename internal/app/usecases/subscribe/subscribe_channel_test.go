@@ -48,6 +48,7 @@ type mock_frame_builder struct {
 }
 
 func (m *mock_frame_builder) WithPayload(_ app.Payload) app.FrameBuilder { return m }
+func (m *mock_frame_builder) WithBatch(_ app.Batch) app.FrameBuilder     { return m }
 func (m *mock_frame_builder) WithChannel(c string) app.FrameBuilder      { m.channel = c; return m }
 func (m *mock_frame_builder) WithSignature(s app.Signature) app.FrameBuilder {
 	m.signature = s

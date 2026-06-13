@@ -107,7 +107,7 @@ func ExampleClient_Publish() {
 		log.Fatal(err)
 	}
 
-	err = client.Publish(ctx, appsync.PublishCommandInput{
+	_, err = client.Publish(ctx, appsync.PublishCommandInput{
 		Channel: "/default/chat",
 		Payload: payload,
 	})

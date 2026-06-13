@@ -104,7 +104,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = client.Publish(ctx, appsync.PublishCommandInput{
+	if _, err = client.Publish(ctx, appsync.PublishCommandInput{
 		Channel: channel,
 		Payload: payload,
 	}); err != nil {
@@ -126,7 +126,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = client.Publish(ctx, appsync.PublishCommandInput{
+	if _, err = client.Publish(ctx, appsync.PublishCommandInput{
 		Channel:    channel,
 		Payload:    overridePayload,
 		Authorizer: overrideAuthz,

@@ -48,6 +48,7 @@ func (mock mock_frame) ID() string                   { return "test-id" }
 func (mock mock_frame) Encode() (app.Payload, error) { return nil, nil }
 
 type mockFrameBuilder struct {
+	batch       app.Batch
 	payload     app.Payload
 	channel     string
 	signature   app.Signature
@@ -55,6 +56,7 @@ type mockFrameBuilder struct {
 }
 
 func (m *mockFrameBuilder) WithPayload(p app.Payload) app.FrameBuilder     { m.payload = p; return m }
+func (m *mockFrameBuilder) WithBatch(b app.Batch) app.FrameBuilder         { m.batch = b; return m }
 func (m *mockFrameBuilder) WithChannel(c string) app.FrameBuilder          { m.channel = c; return m }
 func (m *mockFrameBuilder) WithSignature(s app.Signature) app.FrameBuilder { m.signature = s; return m }
 func (m *mockFrameBuilder) WithType(_ string) app.FrameBuilder             { return m }
@@ -84,6 +86,7 @@ func TestPublish(t *testing.T) {
 			name:             "success",
 			authorizer:       &mock_authorizer{signature: signature},
 			sender:           &mock_sender{},
+			batcher:          &mock_batcher{result: []app.Batch{{payload}}},
 			expect_err:       nil,
 			expect_send:      true,
 			expect_payload:   payload,
@@ -94,6 +97,7 @@ func TestPublish(t *testing.T) {
 			name:        "authorizer error does not call send",
 			authorizer:  &mock_authorizer{err: auth_err},
 			sender:      &mock_sender{},
+			batcher:     &mock_batcher{result: []app.Batch{{payload}}},
 			expect_err:  auth_err,
 			expect_send: false,
 		},
@@ -102,6 +106,7 @@ func TestPublish(t *testing.T) {
 			authorizer:          &mock_authorizer{err: auth_err},
 			override_authorizer: &mock_authorizer{signature: app.Signature{"Authorization": "override-sig"}},
 			sender:              &mock_sender{},
+			batcher:             &mock_batcher{result: []app.Batch{{payload}}},
 			expect_err:          nil,
 			expect_send:         true,
 			expect_payload:      payload,
@@ -112,6 +117,7 @@ func TestPublish(t *testing.T) {
 			name:             "writer error is returned",
 			authorizer:       &mock_authorizer{signature: signature},
 			sender:           &mock_sender{err: send_err},
+			batcher:          &mock_batcher{result: []app.Batch{{payload}}},
 			expect_err:       send_err,
 			expect_send:      true,
 			expect_payload:   payload,
@@ -122,6 +128,7 @@ func TestPublish(t *testing.T) {
 			name:        "nil authorizer returns error",
 			authorizer:  nil,
 			sender:      &mock_sender{},
+			batcher:     &mock_batcher{},
 			expect_err:  app.ErrPublishAuthorizerMissing,
 			expect_send: false,
 		},
@@ -130,6 +137,7 @@ func TestPublish(t *testing.T) {
 			authorizer:          nil,
 			override_authorizer: &mock_authorizer{signature: signature},
 			sender:              &mock_sender{},
+			batcher:             &mock_batcher{result: []app.Batch{{payload}}},
 			expect_err:          nil,
 			expect_send:         true,
 			expect_payload:      payload,
@@ -147,9 +155,9 @@ func TestPublish(t *testing.T) {
 			if tt.override_authorizer != nil {
 				override_authorizer = tt.override_authorizer
 			}
-			err := usecase.Publish(context.Background(), publish.PublishCommandInput{
+			_, err := usecase.Publish(context.Background(), publish.PublishCommandInput{
 				Destination: destination,
-				Payload:     payload,
+				Events:      []app.Payload{payload},
 				Frame:       frame,
 				Authorizer:  override_authorizer,
 			})
@@ -163,8 +171,8 @@ func TestPublish(t *testing.T) {
 			}
 
 			if tt.expect_send {
-				if string(frame.payload) != string(tt.expect_payload) {
-					t.Errorf("frame.payload = %q, want %q", frame.payload, tt.expect_payload)
+				if len(frame.batch) == 0 || string(frame.batch[0]) != string(tt.expect_payload) {
+					t.Errorf("frame.batch[0] = %q, want %q", frame.batch[0], tt.expect_payload)
 				}
 				if frame.channel != tt.expect_channel {
 					t.Errorf("frame.channel = %q, want %q", frame.channel, tt.expect_channel)
