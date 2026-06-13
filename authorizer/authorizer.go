@@ -9,7 +9,7 @@ type Authorizer interface {
 
 type AuthorizeCommandInput struct {
 	Channel string
-	Payload []byte
+	Payload [][]byte
 }
 
 type AuthorizeCommandOutput struct {

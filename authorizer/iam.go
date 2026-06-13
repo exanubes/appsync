@@ -48,7 +48,10 @@ func (authorizer *iam_authorizer) Authorize(ctx context.Context, input Authorize
 	}
 
 	if input.Payload != nil {
-		canonical.Payload = []string{string(input.Payload)}
+		canonical.Payload = make([]string, len(input.Payload))
+		for index, payload := range input.Payload {
+			canonical.Payload[index] = string(payload)
+		}
 	}
 
 	payload, err := json.Marshal(canonical)

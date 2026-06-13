@@ -126,9 +126,9 @@ func TestAppSyncAuthorizers(t *testing.T) {
 				}
 			}()
 
-			if err := client.Publish(ctx, appsync.PublishCommandInput{
+			if _, err := client.Publish(ctx, appsync.PublishCommandInput{
 				Channel: channel,
-				Payload: payload,
+				Events:  [][]byte{payload},
 			}); err != nil {
 				t.Fatalf("publish: %v", err)
 			}
@@ -284,9 +284,9 @@ func TestPerRequestAuthorizerOverride(t *testing.T) {
 		}
 	}()
 
-	if err := client.Publish(ctx, appsync.PublishCommandInput{
+	if _, err := client.Publish(ctx, appsync.PublishCommandInput{
 		Channel:    channel,
-		Payload:    payload,
+		Events:     [][]byte{payload},
 		Authorizer: iam,
 	}); err != nil {
 		t.Fatalf("publish: %v", err)
@@ -356,9 +356,9 @@ func TestConnectionSpecificAuthorizers(t *testing.T) {
 		}
 	}()
 
-	if err := client.Publish(ctx, appsync.PublishCommandInput{
+	if _, err := client.Publish(ctx, appsync.PublishCommandInput{
 		Channel: channel,
-		Payload: payload,
+		Events:  [][]byte{payload},
 	}); err != nil {
 		t.Fatalf("publish: %v", err)
 	}
@@ -435,9 +435,9 @@ func TestMixedConnectionLevelAuthorizers(t *testing.T) {
 		}
 	}()
 
-	if err := client.Publish(ctx, appsync.PublishCommandInput{
+	if _, err := client.Publish(ctx, appsync.PublishCommandInput{
 		Channel: channel,
-		Payload: payload,
+		Events:  [][]byte{payload},
 	}); err != nil {
 		t.Fatalf("publish: %v", err)
 	}

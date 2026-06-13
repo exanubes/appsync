@@ -30,10 +30,15 @@ func (client *appsync_client) Publish(ctx context.Context, input PublishCommandI
 		authz = authorizer.NewInternalAdapter(input.Authorizer)
 	}
 	var output PublishCommandOutput
+	payload := make([]app.Payload, len(input.Events))
+
+	for index, event := range input.Events {
+		payload[index] = app.Payload(event)
+	}
 
 	result, err := client.usecases.Publish.Publish(ctx, publish.PublishCommandInput{
 		Destination: input.Channel,
-		Payload:     input.Payload,
+		Events:      payload,
 		Frame:       events.Publish(),
 		Authorizer:  authz,
 	})

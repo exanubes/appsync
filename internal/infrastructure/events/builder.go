@@ -71,11 +71,18 @@ func (builder *FrameBuilder) Build() app.Frame {
 	} else {
 		id = generate_id()
 	}
+
+	payload := make([]string, len(builder.batch))
+
+	for index, event := range builder.batch {
+		payload[index] = string(event)
+	}
+
 	return Frame{
 		Id:        id,
 		Topic:     builder.channel,
 		Signature: builder.signature,
-		Payload:   []string{string(builder.payload)},
+		Payload:   payload,
 		Type:      builder._type,
 	}
 }
