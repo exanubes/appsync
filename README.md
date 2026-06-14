@@ -51,7 +51,7 @@ The root package exposes two main abstractions:
 
 ```go
 type Client interface {
-    Publish(context.Context, PublishCommandInput) error
+    Publish(context.Context, PublishCommandInput) (*PublishCommandOutput, error)
     Subscribe(context.Context, SubscribeCommandInput) (Subscription, error)
     Close(context.Context) error
 }
@@ -117,10 +117,11 @@ func publish(ctx context.Context) error {
 	}
 	defer client.Close(context.Background())
 
-	return client.Publish(ctx, appsync.PublishCommandInput{
+	_, err = client.Publish(ctx, appsync.PublishCommandInput{
 		Channel: "default/notifications",
-		Payload: []byte(`{"message":"hello"}`),
+		Events:  [][]byte{[]byte(`{"message":"hello"}`)},
 	})
+	return err
 }
 ```
 
@@ -269,29 +270,60 @@ client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
 
 ## Publishing events
 
-`Publish` sends a payload to a channel.
+`Publish` sends one or more events to a channel. `Events` is a slice of raw byte slices — one entry per event.
 
 ```go
 payload := []byte(`{"message":"hello"}`)
 
-err := client.Publish(ctx, appsync.PublishCommandInput{
+result, err := client.Publish(ctx, appsync.PublishCommandInput{
     Channel: "default/notifications",
-    Payload: payload,
+    Events:  [][]byte{payload},
 })
 if err != nil {
     return err
 }
 ```
 
-`Payload` is a raw byte slice. The library does not require a Go struct, but AppSync event payloads are commonly JSON. 
-If you want structured data, marshal it before publishing.
+The library does not require a Go struct, but AppSync event payloads are commonly JSON. If you want structured data, marshal it before publishing.
+
+### Batch publishing
+
+Pass multiple events in a single call:
+
+```go
+events := [][]byte{
+    []byte(`{"message":"first"}`),
+    []byte(`{"message":"second"}`),
+    []byte(`{"message":"third"}`),
+}
+
+result, err := client.Publish(ctx, appsync.PublishCommandInput{
+    Channel: "default/notifications",
+    Events:  events,
+})
+if err != nil {
+    return err
+}
+```
+
+### Handling per-event failures
+
+`PublishCommandOutput` reports which events failed individually. The top-level `error` is non-nil only for fatal transport failures that prevent any events from being sent. Individual failures are in `result.Errors`:
+
+```go
+if !result.Success {
+    for _, failed := range result.Errors {
+        log.Printf("event failed: payload=%s err=%v", failed.Payload, failed.Err)
+    }
+}
+```
 
 The optional `Authorizer` field overrides `Authorizers.Publish` for a single call:
 
 ```go
-err := client.Publish(ctx, appsync.PublishCommandInput{
+result, err := client.Publish(ctx, appsync.PublishCommandInput{
     Channel:    "default/notifications",
-    Payload:    payload,
+    Events:     [][]byte{payload},
     Authorizer: perRequestAuthz,
 })
 ```
@@ -561,6 +593,7 @@ Relevant behavior:
 - `ErrConnectionClosed` means the connection is no longer live either because it was manually closed or because there 
 was an error which will be joined with this error
 - Context cancellation and deadlines are propagated from public methods where applicable.
+- `Publish` per-event failures are not returned as the top-level `error`. Check `PublishCommandOutput.Success` and `PublishCommandOutput.Errors` for individual event failures. The top-level `error` signals a fatal transport failure only.
 
 ## Examples
 
@@ -608,7 +641,6 @@ in the future for some reason.
 Missing features:
 
 - HTTP Publish
-- Batch Publish 
 - something else I missed probably
 
 ## License

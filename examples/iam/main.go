@@ -12,6 +12,8 @@ import (
 	"github.com/exanubes/appsync/authorizer"
 )
 
+func events(e ...[]byte) [][]byte { return e }
+
 func requiredEnv(name string) string {
 	value := os.Getenv(name)
 	if value == "" {
@@ -67,7 +69,7 @@ func main() {
 
 	if _, err = client.Publish(ctx, appsync.PublishCommandInput{
 		Channel: channel,
-		Payload: payload,
+		Events:  events(payload),
 	}); err != nil {
 		log.Fatal(err)
 	}
