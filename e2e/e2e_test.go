@@ -5,6 +5,7 @@ package e2e_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -449,6 +450,93 @@ func TestMixedConnectionLevelAuthorizers(t *testing.T) {
 
 	if !bytes.Equal(message.Data, payload) {
 		t.Fatalf("message payload mismatch\nwant: %s\n got: %s", payload, message.Data)
+	}
+}
+
+func TestBatchPublish(t *testing.T) {
+	// 13 events = 2 full batches of 5 + 1 partial batch of 3 (batch_size = 5)
+	const event_count = 13
+
+	http_endpoint := require_env(t, "APPSYNC_E2E_HTTP_ENDPOINT")
+	ws_endpoint := require_env(t, "APPSYNC_E2E_WS_ENDPOINT")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	authz, err := authorizer.ApiKey(authorizer.ApiKeyAuthorizerConfig{
+		ApiKey:   require_env(t, "APPSYNC_E2E_API_KEY"),
+		Endpoint: http_endpoint,
+	})
+	if err != nil {
+		t.Fatalf("create authorizer: %v", err)
+	}
+
+	client, err := appsync.Connect(ctx, appsync.ConnectionOptions{
+		Endpoint:     ws_endpoint,
+		Subprotocols: []string{appsync.ProtocolEvents},
+		Authorizers:  appsync.Authorizers{Default: authz},
+	})
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer func() {
+		close_ctx, close_cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer close_cancel()
+		if err := client.Close(close_ctx); err != nil {
+			t.Logf("client close: %v", err)
+		}
+	}()
+
+	namespace := require_env(t, "APPSYNC_E2E_NS_API_KEY")
+	channel := fmt.Sprintf("%s/test-%d", namespace, time.Now().UnixNano())
+
+	sub, err := client.Subscribe(ctx, appsync.SubscribeCommandInput{
+		Channel: channel,
+	})
+	if err != nil {
+		t.Fatalf("subscribe: %v", err)
+	}
+	defer func() {
+		close_ctx, close_cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer close_cancel()
+		if err := sub.Close(close_ctx); err != nil {
+			t.Logf("subscription close: %v", err)
+		}
+	}()
+
+	events := make([][]byte, event_count)
+	for i := range event_count {
+		events[i] = []byte(fmt.Sprintf(`{"index":%d}`, i))
+	}
+
+	if _, err := client.Publish(ctx, appsync.PublishCommandInput{
+		Channel: channel,
+		Events:  events,
+	}); err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+
+	received := make(map[int]bool)
+	for range event_count {
+		message, err := sub.Next(ctx)
+		if err != nil {
+			t.Fatalf("next message: %v", err)
+		}
+
+		var event struct {
+			Index int `json:"index"`
+		}
+		if err := json.Unmarshal(message.Data, &event); err != nil {
+			t.Fatalf("decode message %s: %v", message.Data, err)
+		}
+
+		received[event.Index] = true
+	}
+
+	for i := range event_count {
+		if !received[i] {
+			t.Errorf("event %d was not received", i)
+		}
 	}
 }
 

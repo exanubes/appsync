@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/exanubes/appsync/internal/app"
+	"github.com/exanubes/appsync/internal/app/protocol"
 	"github.com/exanubes/appsync/internal/app/usecases/publish"
 )
 
@@ -31,7 +32,8 @@ func (mock *mock_batcher) Batch(events []app.Payload) []app.Batch {
 }
 
 type mock_sender struct {
-	err      error
+	errs     []error
+	calls    int
 	called   bool
 	received app.Frame
 }
@@ -39,7 +41,12 @@ type mock_sender struct {
 func (mock *mock_sender) Send(_ context.Context, frame app.Frame) error {
 	mock.called = true
 	mock.received = frame
-	return mock.err
+	var err error
+	if mock.calls < len(mock.errs) {
+		err = mock.errs[mock.calls]
+	}
+	mock.calls++
+	return err
 }
 
 type mock_frame struct{}
@@ -77,29 +84,33 @@ func TestPublish(t *testing.T) {
 		sender              *mock_sender
 		batcher             *mock_batcher
 		expect_err          error
-		expect_send         bool
+		expect_send_calls   int
+		expect_success      bool
+		expect_failures     int
 		expect_payload      app.Payload
 		expect_channel      string
 		expect_signature    app.Signature
 	}{
 		{
-			name:             "success",
-			authorizer:       &mock_authorizer{signature: signature},
-			sender:           &mock_sender{},
-			batcher:          &mock_batcher{result: []app.Batch{{payload}}},
-			expect_err:       nil,
-			expect_send:      true,
-			expect_payload:   payload,
-			expect_channel:   destination,
-			expect_signature: signature,
+			name:              "success",
+			authorizer:        &mock_authorizer{signature: signature},
+			sender:            &mock_sender{},
+			batcher:           &mock_batcher{result: []app.Batch{{payload}}},
+			expect_err:        nil,
+			expect_send_calls: 1,
+			expect_success:    true,
+			expect_failures:   0,
+			expect_payload:    payload,
+			expect_channel:    destination,
+			expect_signature:  signature,
 		},
 		{
-			name:        "authorizer error does not call send",
-			authorizer:  &mock_authorizer{err: auth_err},
-			sender:      &mock_sender{},
-			batcher:     &mock_batcher{result: []app.Batch{{payload}}},
-			expect_err:  auth_err,
-			expect_send: false,
+			name:              "authorizer error does not call send",
+			authorizer:        &mock_authorizer{err: auth_err},
+			sender:            &mock_sender{},
+			batcher:           &mock_batcher{result: []app.Batch{{payload}}},
+			expect_err:        auth_err,
+			expect_send_calls: 0,
 		},
 		{
 			name:                "override authorizer is used instead of default",
@@ -108,29 +119,31 @@ func TestPublish(t *testing.T) {
 			sender:              &mock_sender{},
 			batcher:             &mock_batcher{result: []app.Batch{{payload}}},
 			expect_err:          nil,
-			expect_send:         true,
+			expect_send_calls:   1,
+			expect_success:      true,
+			expect_failures:     0,
 			expect_payload:      payload,
 			expect_channel:      destination,
 			expect_signature:    app.Signature{"Authorization": "override-sig"},
 		},
 		{
-			name:             "writer error is returned",
-			authorizer:       &mock_authorizer{signature: signature},
-			sender:           &mock_sender{err: send_err},
-			batcher:          &mock_batcher{result: []app.Batch{{payload}}},
-			expect_err:       send_err,
-			expect_send:      true,
-			expect_payload:   payload,
-			expect_channel:   destination,
-			expect_signature: signature,
+			name:              "writer error is returned",
+			authorizer:        &mock_authorizer{signature: signature},
+			sender:            &mock_sender{errs: []error{send_err}},
+			batcher:           &mock_batcher{result: []app.Batch{{payload}}},
+			expect_err:        send_err,
+			expect_send_calls: 1,
+			expect_payload:    payload,
+			expect_channel:    destination,
+			expect_signature:  signature,
 		},
 		{
-			name:        "nil authorizer returns error",
-			authorizer:  nil,
-			sender:      &mock_sender{},
-			batcher:     &mock_batcher{},
-			expect_err:  app.ErrPublishAuthorizerMissing,
-			expect_send: false,
+			name:              "nil authorizer returns error",
+			authorizer:        nil,
+			sender:            &mock_sender{},
+			batcher:           &mock_batcher{},
+			expect_err:        app.ErrPublishAuthorizerMissing,
+			expect_send_calls: 0,
 		},
 		{
 			name:                "override authorizer used when default is nil",
@@ -139,10 +152,55 @@ func TestPublish(t *testing.T) {
 			sender:              &mock_sender{},
 			batcher:             &mock_batcher{result: []app.Batch{{payload}}},
 			expect_err:          nil,
-			expect_send:         true,
+			expect_send_calls:   1,
+			expect_success:      true,
+			expect_failures:     0,
 			expect_payload:      payload,
 			expect_channel:      destination,
 			expect_signature:    signature,
+		},
+		{
+			name:       "batch publish error populates failures",
+			authorizer: &mock_authorizer{signature: signature},
+			sender: &mock_sender{errs: []error{
+				protocol.BatchPublishError{Failures: []protocol.FailedEvent{{Index: 0}}},
+			}},
+			batcher:           &mock_batcher{result: []app.Batch{{payload}}},
+			expect_err:        nil,
+			expect_send_calls: 1,
+			expect_success:    false,
+			expect_failures:   1,
+		},
+		{
+			name:              "multiple batches all succeed",
+			authorizer:        &mock_authorizer{signature: signature},
+			sender:            &mock_sender{},
+			batcher:           &mock_batcher{result: []app.Batch{{payload}, {payload}}},
+			expect_err:        nil,
+			expect_send_calls: 2,
+			expect_success:    true,
+			expect_failures:   0,
+		},
+		{
+			name:       "batch publish errors accumulate across batches",
+			authorizer: &mock_authorizer{signature: signature},
+			sender: &mock_sender{errs: []error{
+				protocol.BatchPublishError{Failures: []protocol.FailedEvent{{Index: 0}}},
+				protocol.BatchPublishError{Failures: []protocol.FailedEvent{{Index: 0}}},
+			}},
+			batcher:           &mock_batcher{result: []app.Batch{{payload}, {payload}}},
+			expect_err:        nil,
+			expect_send_calls: 2,
+			expect_success:    false,
+			expect_failures:   2,
+		},
+		{
+			name:              "non-batch error aborts remaining batches",
+			authorizer:        &mock_authorizer{signature: signature},
+			sender:            &mock_sender{errs: []error{send_err}},
+			batcher:           &mock_batcher{result: []app.Batch{{payload}, {payload}}},
+			expect_err:        send_err,
+			expect_send_calls: 1,
 		},
 	}
 
@@ -155,7 +213,7 @@ func TestPublish(t *testing.T) {
 			if tt.override_authorizer != nil {
 				override_authorizer = tt.override_authorizer
 			}
-			_, err := usecase.Publish(context.Background(), publish.PublishCommandInput{
+			output, err := usecase.Publish(context.Background(), publish.PublishCommandInput{
 				Destination: destination,
 				Events:      []app.Payload{payload},
 				Frame:       frame,
@@ -166,11 +224,11 @@ func TestPublish(t *testing.T) {
 				t.Errorf("got error %v, want %v", err, tt.expect_err)
 			}
 
-			if tt.sender.called != tt.expect_send {
-				t.Errorf("sender.called = %v, want %v", tt.sender.called, tt.expect_send)
+			if tt.sender.calls != tt.expect_send_calls {
+				t.Errorf("sender.calls = %d, want %d", tt.sender.calls, tt.expect_send_calls)
 			}
 
-			if tt.expect_send {
+			if tt.expect_payload != nil {
 				if len(frame.batch) == 0 || string(frame.batch[0]) != string(tt.expect_payload) {
 					t.Errorf("frame.batch[0] = %q, want %q", frame.batch[0], tt.expect_payload)
 				}
@@ -184,6 +242,15 @@ func TestPublish(t *testing.T) {
 					if frame.signature[k] != v {
 						t.Errorf("frame.signature[%q] = %q, want %q", k, frame.signature[k], v)
 					}
+				}
+			}
+
+			if output != nil {
+				if output.Success != tt.expect_success {
+					t.Errorf("Success = %v, want %v", output.Success, tt.expect_success)
+				}
+				if len(output.Failures) != tt.expect_failures {
+					t.Errorf("len(Failures) = %d, want %d", len(output.Failures), tt.expect_failures)
 				}
 			}
 		})
